@@ -12,7 +12,7 @@ import {
   Box,
 } from "@mui/material";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import { useEffect } from "react";
 import { getPartyLedger } from "../../store/ledger/ledgerSlice";
@@ -90,6 +90,15 @@ function PartyLedgerDetail() {
                     <TableCell>
                       <Box className="flex items-center gap-2">
                         {inv.description || "—"}
+                        {inv.invoiceId && (
+                          <Link
+                            to={`/preview-invoice/${inv.invoiceId}`}
+                            className="text-blue-600 hover:underline text-sm"
+                          >
+                            View Invoice
+                          </Link>
+                        )}
+
                         {inv.type === "credit brokerage" && (
                           <Chip label="Commission" />
                         )}
