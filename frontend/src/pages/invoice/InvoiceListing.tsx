@@ -2,10 +2,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Paper,
   Table,
   TableBody,
@@ -13,80 +9,60 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TextField,
+  Chip,
+  Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
-import { FaRegEdit, FaSpinner } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import { deleteInvoice, getInvoice } from "../../store/invoice/invoiceSlice";
-import { MdDelete, MdPreview } from "react-icons/md";
+import { MdDelete } from "react-icons/md";
+import { Visibility, Payment } from "@mui/icons-material";
 import PaymentModel from "./PaymentModel";
 import DeletePopupMessage from "../../components/DeletePopupMessage";
-import { Visibility } from "@mui/icons-material";
+import { FaSpinner } from "react-icons/fa";
+import ClosePaymentPopupMessage from "../../components/ClosePaymentPopupMessage";
 
 const InvoiceListing = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [confirmation, setConfirmation] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>("");
+  const [closeOpen, setCloseOpen] = useState(false);
   const { user } = useAppSelector((state: any) => state.auth);
   const { loading, invoiceData } = useAppSelector(
     (state: any) => state.invoice
   );
   const [openPaymentModal, setOpenPaymentModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
-  const [paymentForm, setPaymentForm] = useState({
-    paymentDate: "",
-    amount: "",
-    note: "",
-  });
-  console.log("invoiceData", invoiceData);
+
   const invoiceDetails = [
     "Invoice No",
     "Bill Status",
     "Invoice Type",
     "Party",
     "Total",
+    "Due Amount",
     "Issued Date",
     "Payment Status",
     "Action",
   ];
-  console.log("invoiceData", invoiceData);
 
   const handleOpenPayment = (invoice: any) => {
     setSelectedInvoice(invoice);
-    setPaymentForm({
-      paymentDate: new Date().toISOString().split("T")[0], // default today
-      amount: invoice?.totalAmount || "",
-      note: "",
-    });
     setOpenPaymentModal(true);
   };
 
-  // Handle close modal
   const handleClosePayment = () => {
     setOpenPaymentModal(false);
     setSelectedInvoice(null);
   };
+
   useEffect(() => {
     if (user?.companyId) {
       dispatch(getInvoice({ companyId: user.companyId }));
     }
   }, [user]);
-
-  // Handle save
-  const handleSavePayment = () => {
-    console.log("Saving Payment:", {
-      ...paymentForm,
-      invoiceId: selectedInvoice?._id,
-    });
-
-    // 🚀 Dispatch API call here (e.g., addPaymentAction)
-    // dispatch(addPayment({ invoiceId: selectedInvoice._id, ...paymentForm }));
-
-    handleClosePayment();
-  };
 
   const handleDeleteClick = (invoiceId: string) => {
     setSelectedUserId(invoiceId);
@@ -96,27 +72,29 @@ const InvoiceListing = () => {
   const handleDelete = async () => {
     if (selectedUserId) {
       await dispatch(deleteInvoice({ invoiceId: selectedUserId }));
-      // setTimeout(() => {
-      //   dispatch(resetMessage());
-      // }, 1500);
     }
     setConfirmation(false);
     setSelectedUserId("");
   };
+
   return (
     <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-      <Box className="flex justify-between">
-        <Box className="text-2xl font-semibold">Invoice Lisitng</Box>
+      {/* Header */}
+      <Box className="flex justify-between items-center mb-4">
+        <Typography variant="h5" fontWeight="bold">
+          📑 Invoice Listing
+        </Typography>
         <Box className="flex gap-x-2">
-          <Box className="flex items-center">
-            {loading && <FaSpinner className="animate-spin" />}
-            {/* <Box className="text-sm font-semibold">{message}</Box> */}
-          </Box>
-
+          {loading && <FaSpinner className="animate-spin text-blue-500" />}
           <Button
             size="small"
             variant="contained"
-            className="!bg-[#3a2ae2b3] !text-xs !rounded-md !py-1.5 !capitalize"
+            sx={{
+              background: "linear-gradient(45deg, #6a11cb, #2575fc)",
+              borderRadius: "8px",
+              textTransform: "capitalize",
+              fontWeight: "bold",
+            }}
             onClick={() =>
               navigate("/add-invoice", { state: { invoiceType: "sell" } })
             }
@@ -126,7 +104,12 @@ const InvoiceListing = () => {
           <Button
             size="small"
             variant="contained"
-            className="!bg-[#3a2ae2b3] !text-xs !rounded-md !py-1.5 !capitalize"
+            sx={{
+              background: "linear-gradient(45deg, #ff6a00, #ee0979)",
+              borderRadius: "8px",
+              textTransform: "capitalize",
+              fontWeight: "bold",
+            }}
             onClick={() =>
               navigate("/add-invoice", { state: { invoiceType: "buy" } })
             }
@@ -136,90 +119,138 @@ const InvoiceListing = () => {
         </Box>
       </Box>
 
-      <Paper sx={{ width: "100%", overflow: "hidden" }} className="mt-4">
-        <TableContainer sx={{ maxHeight: 440 }}>
+      {/* Table */}
+      <Paper
+        sx={{
+          width: "100%",
+          overflow: "hidden",
+          borderRadius: "16px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+        }}
+      >
+        <TableContainer sx={{ maxHeight: 500 }}>
           {loading ? (
             <Box className="h-[550px] flex justify-center items-center">
               <CircularProgress />
             </Box>
           ) : (
-            <Table stickyHeader aria-label="sticky table">
+            <Table stickyHeader>
               <TableHead>
                 <TableRow>
-                  {invoiceDetails?.map((item, index) => (
-                    <TableCell key={index}>
-                      <Box
-                        className={`flex items-center font-semibold gap-x-1.5`}
-                      >
-                        {item}
-                      </Box>
+                  {invoiceDetails.map((item, index) => (
+                    <TableCell
+                      key={index}
+                      sx={{ fontWeight: "bold", background: "#f9fafb" }}
+                    >
+                      {item}
                     </TableCell>
                   ))}
                 </TableRow>
               </TableHead>
               <TableBody>
                 {invoiceData?.length > 0 ? (
-                  invoiceData?.map((row: any, rowIndex: number) => (
-                    <TableRow key={rowIndex} hover>
-                      <TableCell className=" ">{row?.invoiceNo}</TableCell>
-                      <TableCell className="">{row?.billStatus}</TableCell>
-                      <TableCell className="">{row?.invoiceType}</TableCell>
-                      <TableCell className="">
+                  invoiceData.map((row: any, rowIndex: number) => (
+                    <TableRow
+                      key={rowIndex}
+                      hover
+                      sx={{
+                        transition: "all 0.2s",
+                        "&:hover": { backgroundColor: "#f5faff" },
+                      }}
+                    >
+                      <TableCell>{row?.invoiceNo}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={row?.billStatus}
+                          color={
+                            row?.billStatus === "In Progress"
+                              ? "primary"
+                              : "warning"
+                          }
+                          variant="outlined"
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={row?.invoiceType}
+                          color={
+                            row?.invoiceType === "sell" ? "success" : "info"
+                          }
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
                         {row?.invoiceType === "sell"
                           ? row?.buyerId?.username
                           : row?.sellerId?.username}
                       </TableCell>
-
-                      <TableCell className="">{row?.totalAmount}</TableCell>
-                      <TableCell className="">
-                        {new Date(row?.createdDate).toISOString().split("T")[0]}
+                      <TableCell>₹{row?.totalAmount}</TableCell>
+                      <TableCell>₹{row?.dueAmount}</TableCell>
+                      <TableCell>
+                        {
+                          new Date(row?.createdDate)
+                            ?.toISOString()
+                            .split("T")[0]
+                        }
                       </TableCell>
-                      <TableCell className="">{row?.paymentStatus}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={row?.paymentStatus}
+                          color={
+                            row?.paymentStatus === "Paid" ? "success" : "error"
+                          }
+                          variant="outlined"
+                          size="small"
+                        />
+                      </TableCell>
                       <TableCell>
                         <Box className="flex items-center gap-x-2">
                           <Button
                             size="small"
-                            variant="outlined"
+                            variant="contained"
+                            color="info"
+                            startIcon={<Payment />}
                             onClick={() => handleOpenPayment(row)}
+                            disabled={row?.dueAmount === 0}
                           >
-                            Payment
+                            Pay
                           </Button>
-                          <Box className="cursor-pointer">
+                          {row.dueAmount > 0 && (
                             <Button
-                              variant="outlined"
-                              size="small"
-                              startIcon={<Visibility />}
-                              onClick={() =>
-                                navigate(`/preview-invoice/${row?._id}`)
-                              }
+                              variant="contained"
+                              color="success"
+                              onClick={() => {
+                                setSelectedInvoice(row);
+                                setCloseOpen(true);
+                              }}
                             >
-                              View
+                              Close Payment
                             </Button>
-                          </Box>
-                          {/* <Box className="cursor-pointer">
-                            <FaRegEdit
-                              fill="green"
-                              size={18}
-                              //   onClick={() => {
-                              //     dispatch(getSingleUser(row));
-                              //     setOpenEditModal(true);
-                              //   }}
-                            />
-                          </Box> */}
-                          <Box className="cursor-pointer">
-                            <MdDelete
-                              size={20}
-                              fill="#d10000"
-                              onClick={() => handleDeleteClick(row?._id)}
-                            />
-                          </Box>
+                          )}
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<Visibility />}
+                            onClick={() =>
+                              navigate(`/preview-invoice/${row?._id}`)
+                            }
+                          >
+                            View
+                          </Button>
+                          <MdDelete
+                            size={22}
+                            fill="#d10000"
+                            className="cursor-pointer"
+                            onClick={() => handleDeleteClick(row?._id)}
+                          />
                         </Box>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={invoiceData?.length}>
+                    <TableCell colSpan={invoiceDetails.length}>
                       <Box className="flex items-center justify-center h-[30vh] text-gray-500 font-medium">
                         No Data Found
                       </Box>
@@ -234,8 +265,8 @@ const InvoiceListing = () => {
 
       <PaymentModel
         open={openPaymentModal}
+        setOpen={setOpenPaymentModal}
         onClose={handleClosePayment}
-        onSave={handleSavePayment}
         invoice={selectedInvoice}
       />
 
@@ -245,6 +276,14 @@ const InvoiceListing = () => {
           setOpen={setConfirmation}
           paramId={selectedUserId}
           removeAction={handleDelete}
+        />
+      )}
+
+      {closeOpen && (
+        <ClosePaymentPopupMessage
+          open={closeOpen}
+          setOpen={setCloseOpen}
+          invoice={selectedInvoice}
         />
       )}
     </Box>

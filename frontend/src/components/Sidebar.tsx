@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Drawer,
@@ -15,11 +15,15 @@ import { LuUsers } from "react-icons/lu";
 import { useAppSelector } from "../store/store";
 import { LiaFileInvoiceSolid } from "react-icons/lia";
 import logoImage from "../../public/eco-5465482_1280.webp";
+import { FiLogOut } from "react-icons/fi";
+import LogoutConfirmationPopup from "./LogoutConfirmationPopup";
 
 const drawerWidth = 240;
 
 const Sidebar = () => {
   const location = useLocation();
+  const [openLogout, setOpenLogout] = useState(false);
+
   const { company } = useAppSelector((state) => state.auth);
   const sidebarMenu = [
     { name: "Dashboard", icon: FaRainbow, param: "/dashboard" },
@@ -77,7 +81,22 @@ const Sidebar = () => {
             </Link>
           );
         })}
+        <Box
+          onClick={() => setOpenLogout(true)}
+          className="flex items-center gap-3 px-3 py-1.5 m-1.5 rounded-md mb-1 transition-colors text-gray-700 hover:bg-red-100 cursor-pointer"
+        >
+          <FiLogOut size={18} className="text-red-500" />
+          <span className="text-lg font-medium text-red-500">Logout</span>
+        </Box>
       </List>
+
+      {openLogout && (
+        <LogoutConfirmationPopup
+          openLogout={openLogout}
+          setOpenLogout={setOpenLogout}
+          company={company}
+        />
+      )}
     </Box>
   );
 };

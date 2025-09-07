@@ -15,11 +15,6 @@ const itemsSchema = new mongoose.Schema({
   price: { type: Number, required: true },
 });
 
-const paymentSchema = new mongoose.Schema({
-  paymentDate: { type: Date, required: true },
-  amount: { type: Number, required: true },
-  note: { type: String },
-});
 const InvoiceSchema = new mongoose.Schema(
   {
     companyId: {
@@ -90,7 +85,6 @@ const InvoiceSchema = new mongoose.Schema(
     //   type: Number,
     //   required: true,
     // },
-    payments: [{ type: paymentSchema }],
     paymentStatus: {
       type: String,
       enum: ['Paid', 'Unpaid'],
@@ -106,6 +100,21 @@ const InvoiceSchema = new mongoose.Schema(
     note: {
       type: String,
     },
+    isClosed: {
+      type: Boolean,
+      default: false,
+    },
+    dueAmount: {
+      type: Number,
+      default: 0,
+      // required: true,
+    },
+    paidAmount: {
+      type: Number,
+      default: 0,
+      // required: true,
+    },
+    closedPaymentDate: { type: Date },
   },
   {
     timestamps: true,

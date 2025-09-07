@@ -24,9 +24,12 @@ const AddInvoice = () => {
   const { nextInvoiceNumber } = useAppSelector((state) => state.invoice);
   const invoiceType = location.state?.invoiceType || "sell";
   const [errors, setErrors] = useState<any>({});
-  const [formData, setFormData] = useState<any>({});
-
+  const [formData, setFormData] = useState<any>({
+    createdDate: dayjs(),
+  });
+  console.log("loading", loading);
   useEffect(() => {
+    console.log("inside useEffect", dayjs());
     setFormData({
       createdDate: dayjs(),
       billNo: "",
@@ -58,6 +61,7 @@ const AddInvoice = () => {
     });
   }, [user, company]);
 
+  console.log("formData", formData);
   useEffect(() => {
     dispatch(getNextInvoiceNumber({}));
   }, [user]);
@@ -87,6 +91,7 @@ const AddInvoice = () => {
     formData?.brokeragePercentage,
   ]);
 
+  console.log("formData", formData);
   useEffect(() => {
     if (formData.dueDay && !isNaN(formData.dueDay) && formData.dueDay >= 0) {
       const calculatedDueDate = dayjs().add(parseInt(formData.dueDay), "day");
@@ -141,7 +146,6 @@ const AddInvoice = () => {
       newItems[idx][field] = value;
     }
 
-    // Auto-update price if cost/qty are numbers
     if (field === "cost" || field === "qty") {
       newItems[idx].price = parseFloat(
         (newItems[idx].cost * newItems[idx].qty).toFixed(2)
@@ -183,7 +187,6 @@ const AddInvoice = () => {
     }));
     setErrors((prev: any) => ({ ...prev, dueDay: "" }));
   };
-  // console.log("companyUsers", companyUsers);
   const getOption = () => {
     const option =
       companyUsers?.length > 0
@@ -313,10 +316,15 @@ const AddInvoice = () => {
       brokerageAmount: formData.brokerageAmount,
       totalAmount: formData.totalAmount,
       discount: formData.discount,
+      dueAmount: formData?.totalAmount,
+      paidAmount: 0,
+      note: formData.note || "",
     };
     await dispatch(createInvoice(payload));
     navigate("/invoice");
   };
+
+  console.log("formData?.createdDate", formData?.createdDate);
   return (
     <Box className="w-full bg-gray-50 flex flex-col items-center py-6">
       {loading ? (

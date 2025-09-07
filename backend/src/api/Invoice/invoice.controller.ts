@@ -42,6 +42,9 @@ class InvoiceController implements ControllerI {
 
     this.router.get(`${this.path}/details/:invoiceId`, authMiddleware, this.getInvoiceById);
     this.router.delete(`${this.path}/:invoiceId`, authMiddleware, this.deleteInvoice);
+
+    this.router.post(`${this.path}/payment/:invoiceId`, authMiddleware, this.makePayment);
+    this.router.post(`${this.path}/close-payment/:invoiceId`, authMiddleware, this.closePayment);
   }
 
   private createCompanyInvoice = async (
@@ -75,15 +78,16 @@ class InvoiceController implements ControllerI {
           throw new Error(ERROR_MESSAGES.COMMON.NOT_FOUND.replace(':attribute', 'seller'));
         }
       }
+
       if (buyerId) {
         const buyer = await MongoService.findOne(UserModel, {
           query: { _id: buyerId, companyId },
         });
         if (!buyer) {
-          console.log('if.....');
           throw new Error(ERROR_MESSAGES.COMMON.NOT_FOUND.replace(':attribute', 'buyer'));
         }
       }
+
       if (brokerId) {
         const broker = await MongoService.findOne(UserModel, {
           query: { _id: brokerId, companyId },
@@ -92,6 +96,7 @@ class InvoiceController implements ControllerI {
           throw new Error(ERROR_MESSAGES.COMMON.NOT_FOUND.replace(':attribute', 'broker'));
         }
       }
+
       const lastInvoice = await MongoService.findOne(InvoiceModel, {
         query: {},
         sort: { invoiceNo: -1 },
@@ -100,23 +105,20 @@ class InvoiceController implements ControllerI {
       if (lastInvoice) {
         nextInvoiceNo = lastInvoice.invoiceNo + 1;
       }
-
       console.log('lastInvoice', lastInvoice);
       const invoice = await MongoService.create(InvoiceModel, {
         insert: { ...request.body, invoiceNo: nextInvoiceNo },
       });
-
       const ledgerEntries = [];
 
       if (invoiceType === 'sell') {
-        console.log('first if.....');
-        // Entry 1: Buyer debited for full amount to seller
         ledgerEntries.push({
           companyId,
           invoiceId: invoice._id,
           fromUser: buyerId,
-          toUser: sellerId, //company user is seller
-          amount: totalAmount,
+          toUser: sellerId,
+          amount: 0,
+          pendingAmount: totalAmount,
           type: 'debit',
           description: `Sale invoice #${nextInvoiceNo} - Buyer payment to seller`,
         });
@@ -127,32 +129,33 @@ class InvoiceController implements ControllerI {
             invoiceId: invoice._id,
             fromUser: sellerId,
             toUser: brokerId,
-            amount: brokerageAmount,
+            amount: 0,
+            pendingAmount: brokerageAmount,
             type: 'credit brokerage',
             description: `Sale invoice #${nextInvoiceNo} - Brokerage fee`,
           });
         }
       } else if (invoiceType === 'buy') {
-        // Entry 2: Buyer debited for purchase amount (minus brokerage if any)
         ledgerEntries.push({
           companyId,
           invoiceId: invoice._id,
-          fromUser: buyerId, //company user is buyer in purchase
+          fromUser: buyerId,
           toUser: sellerId,
-          amount: totalAmount,
+          amount: 0,
+          pendingAmount: totalAmount,
           type: 'credit',
           description: `Purchase invoice #${nextInvoiceNo} - Buyer payment to seller`,
         });
 
-        // Entry 3: Broker credited with brokerage amount (if brokerage exists)
         if (brokerId && brokerageAmount > 0) {
           ledgerEntries.push({
             companyId,
             invoiceId: invoice._id,
-            fromUser: buyerId, // Brokerage paid by buyer in purchase
+            fromUser: buyerId,
             toUser: brokerId,
-            amount: brokerageAmount,
+            amount: 0,
             type: 'credit brokerage',
+            pendingAmount: brokerageAmount,
             description: `Purchase invoice #${nextInvoiceNo} - Brokerage fee`,
           });
         }
@@ -288,7 +291,19 @@ class InvoiceController implements ControllerI {
       if (!invoice) {
         throw new Error(ERROR_MESSAGES.COMMON.NOT_FOUND.replace(':attribute', 'Invoice'));
       }
+      console.log('invoice', invoice);
 
+      const payments = await LedgerModel.find({ invoiceId })
+        .populate([
+          { path: 'fromUser', model: 'User', select: 'username email' },
+          { path: 'toUser', model: 'User', select: 'username email' },
+        ])
+        .sort({ createdAt: -1 });
+      console.log('payments', payments);
+      const result = {
+        ...invoice,
+        payments,
+      };
       return successResposne(
         {
           message: SUCCESS_MESSAGES.COMMON.ACTION_SUCCESS.replace(
@@ -297,7 +312,7 @@ class InvoiceController implements ControllerI {
           ),
           status: SUCCESS_MESSAGES.SUCCESS,
           statusCode: HTTP_STATUS_CODES.OK,
-          data: invoice,
+          data: result,
         },
         request,
         response,
@@ -339,6 +354,215 @@ class InvoiceController implements ControllerI {
       );
     } catch (error) {
       LoggerService.error(`There was an issue deleting Invoice: ${error}`);
+      return next(error);
+    }
+  };
+
+  private makePayment = async (request: Request, response: Response, next: NextFunction) => {
+    try {
+      const { invoiceId } = request.params;
+      const { amount, createdDate, description } = request.body;
+
+      if (!invoiceId || !amount) {
+        throw new Error(
+          ERROR_MESSAGES.COMMON.REQUIRED.replace(':attribute', 'invoiceId and amount')
+        );
+      }
+
+      const invoice: any = await MongoService.findOne(InvoiceModel, { query: { _id: invoiceId } });
+      if (!invoice) {
+        throw new Error(ERROR_MESSAGES.COMMON.NOT_FOUND.replace(':attribute', 'Invoice'));
+      }
+
+      if (invoice?.isClosed) {
+        throw new Error('Invoice is already closed, no more payments allowed.');
+      }
+
+      if (amount > invoice.dueAmount) {
+        throw new Error('Payment exceeds remaining due amount');
+      }
+
+      const updatedPaidAmount = (invoice.paidAmount || 0) + amount;
+      const updatedDueAmount = (invoice.dueAmount || invoice.totalAmount) - amount;
+
+      let paymentStatus = 'Unpaid';
+      let billStatus = 'In Progress';
+      let isClosed = false;
+
+      if (updatedDueAmount === 0) {
+        paymentStatus = 'Paid';
+        billStatus = 'Complete';
+        isClosed = true;
+      }
+
+      const updatedInvoiceRaw = await MongoService.findOneAndUpdate(InvoiceModel, {
+        query: { _id: invoiceId },
+        updateData: {
+          $set: {
+            paidAmount: updatedPaidAmount,
+            dueAmount: updatedDueAmount,
+            paymentStatus,
+            billStatus,
+            isClosed,
+          },
+        },
+        updateOptions: { new: true },
+      });
+
+      const updatedInvoice = await MongoService.findById(InvoiceModel, {
+        query: updatedInvoiceRaw._id,
+        populate: [
+          { path: 'buyerId', select: 'username email' },
+          { path: 'sellerId', select: 'username email' },
+        ],
+      });
+
+      let ledgerType: 'credit' | 'debit' = 'credit';
+      let ledgerDescription = description;
+
+      if (invoice.invoiceType === 'sell') {
+        ledgerType = 'credit';
+        ledgerDescription =
+          ledgerDescription ||
+          `Received payment of ${amount} from Buyer for Sale Invoice #${invoice.invoiceNo}`;
+      } else if (invoice.invoiceType === 'buy') {
+        ledgerType = 'debit';
+        ledgerDescription =
+          ledgerDescription || `Paid ${amount} to Seller for Buy Invoice #${invoice.invoiceNo}`;
+      }
+
+      const ledgerEntry = await MongoService.create(LedgerModel, {
+        insert: {
+          companyId: invoice.companyId,
+          invoiceId: invoice._id,
+          fromUser: invoice.buyerId,
+          toUser: invoice.sellerId,
+          createdDate,
+          amount,
+          pendingAmount: updatedDueAmount,
+          type: ledgerType,
+          description: ledgerDescription,
+        },
+      });
+      return successResposne(
+        {
+          message: SUCCESS_MESSAGES.COMMON.ACTION_SUCCESS.replace(
+            ':action',
+            'Payment Made Successfully'
+          ),
+          status: SUCCESS_MESSAGES.SUCCESS,
+          statusCode: HTTP_STATUS_CODES.OK,
+          data: {
+            invoice: updatedInvoice,
+            ledgerEntry,
+          },
+        },
+        request,
+        response,
+        next
+      );
+    } catch (error) {
+      LoggerService.error(`Error while making payment: ${error}`);
+      return next(error);
+    }
+  };
+
+  private closePayment = async (request: Request, response: Response, next: NextFunction) => {
+    try {
+      const { invoiceId } = request.params;
+
+      if (!invoiceId) {
+        throw new Error(ERROR_MESSAGES.COMMON.REQUIRED.replace(':attribute', 'invoiceId'));
+      }
+
+      const invoice: any = await MongoService.findOne(InvoiceModel, { query: { _id: invoiceId } });
+
+      if (!invoice) {
+        throw new Error(ERROR_MESSAGES.COMMON.NOT_FOUND.replace(':attribute', 'Invoice'));
+      }
+
+      if (invoice.isClosed) {
+        throw new Error('Invoice is already closed, no more payments allowed.');
+      }
+
+      if (invoice.dueAmount <= 0) {
+        throw new Error('No due amount left to close.');
+      }
+
+      const discountAmount = invoice.dueAmount;
+      const closeDate = new Date();
+
+      const updatedInvoiceRaw = await MongoService.findOneAndUpdate(InvoiceModel, {
+        query: { _id: invoiceId },
+        updateData: {
+          $set: {
+            discount: (invoice.discount || 0) + discountAmount,
+            dueAmount: 0,
+            isClosed: true,
+            paymentStatus: 'Paid',
+            billStatus: 'Complete',
+            closedPaymentDate: closeDate,
+          },
+        },
+        updateOptions: { new: true },
+      });
+
+      const updatedInvoice = await MongoService.findById(InvoiceModel, {
+        query: updatedInvoiceRaw._id,
+        populate: [
+          { path: 'buyerId', select: 'username email' },
+          { path: 'sellerId', select: 'username email' },
+        ],
+      });
+
+      let ledgerType = 'credit';
+      let fromUser = invoice.buyerId;
+      let toUser = invoice.sellerId;
+      let ledgerDescription = '';
+
+      if (invoice.invoiceType === 'sell') {
+        ledgerType = 'credit';
+        ledgerDescription = `Closed invoice #${invoice.invoiceNo}, due ${discountAmount} considered as discount (sale).`;
+      } else if (invoice.invoiceType === 'buy') {
+        ledgerType = 'debit';
+        fromUser = invoice.sellerId;
+        toUser = invoice.buyerId;
+        ledgerDescription = `Closed invoice #${invoice.invoiceNo}, due ${discountAmount} considered as discount (purchase).`;
+      }
+
+      const ledgerEntry = await MongoService.create(LedgerModel, {
+        insert: {
+          companyId: invoice.companyId,
+          invoiceId: invoice._id,
+          fromUser,
+          toUser,
+          createdDate: closeDate,
+          entryType: 'discount',
+          amount: discountAmount,
+          type: ledgerType,
+          description: ledgerDescription,
+        },
+      });
+
+      return successResposne(
+        {
+          message: SUCCESS_MESSAGES.COMMON.ACTION_SUCCESS.replace(
+            ':action',
+            'Invoice Closed Successfully (due considered as discount)'
+          ),
+          status: SUCCESS_MESSAGES.SUCCESS,
+          statusCode: HTTP_STATUS_CODES.OK,
+          data: {
+            invoice: updatedInvoice,
+            ledgerEntry,
+          },
+        },
+        request,
+        response,
+        next
+      );
+    } catch (error) {
+      LoggerService.error(`Error while closing payment: ${error}`);
       return next(error);
     }
   };

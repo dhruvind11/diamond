@@ -58,6 +58,8 @@ export const authSlice = createSlice({
       state.user = {};
       state.authToken = "";
       state.refreshToken = "";
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("refreshToken");
     },
   },
   extraReducers: (builder) => {

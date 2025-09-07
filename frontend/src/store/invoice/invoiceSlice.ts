@@ -4,6 +4,7 @@ import {
   type PayloadAction,
 } from "@reduxjs/toolkit";
 import AxiosRequest from "../../AxiosRequest";
+import { toast } from "react-toastify";
 interface invoiceStateType {
   loading: boolean;
   invoiceData: any;
@@ -76,6 +77,24 @@ export const deleteInvoice = createAsyncThunk(
     try {
       const { data } = await AxiosRequest.delete(`/invoice/${invoiceId}`);
       return data?.data?.deletedInvoiceId;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || "Something went wrong");
+    }
+  }
+);
+
+export const makePayment = createAsyncThunk(
+  "invoice/makePayment",
+  async (
+    { invoiceId, paymentData }: { invoiceId: string; paymentData: any },
+    { rejectWithValue }
+  ) => {
+    try {
+      const { data } = await AxiosRequest.post(
+        `/invoice/payment/${invoiceId}`,
+        paymentData
+      );
+      return data?.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data || "Something went wrong");
     }
@@ -157,6 +176,24 @@ export const invoiceSlice = createSlice({
         }
       )
       .addCase(deleteInvoice.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(makePayment.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(makePayment.fulfilled, (state, action: PayloadAction<any>) => {
+        state.loading = false;
+        console.log("action.payload", action.payload?.invoice);
+        state.invoiceData = state.invoiceData.map((invoice: any) =>
+          invoice._id === action.payload?.invoice._id
+            ? action.payload?.invoice
+            : invoice
+        );
+        toast.success("Payment Successfully");
+      })
+      .addCase(makePayment.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

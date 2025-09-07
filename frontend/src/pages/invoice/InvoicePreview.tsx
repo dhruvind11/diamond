@@ -1,10 +1,7 @@
-"use client";
-
 import {
   Box,
   Button,
   Card,
-  CardContent,
   CircularProgress,
   Divider,
   Paper,
@@ -18,14 +15,20 @@ import {
 } from "@mui/material";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import logoImage from "../../../public/eco-5465482_1280.webp";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getInvoiceById } from "../../store/invoice/invoiceSlice";
+import { Payment } from "@mui/icons-material";
+import PaymentModel from "./PaymentModel";
+import ClosePaymentPopupMessage from "../../components/ClosePaymentPopupMessage";
 
 export default function InvoicePreview() {
   const { company } = useAppSelector((state) => state.auth);
   const { id } = useParams();
   const dispatch = useAppDispatch();
+  const [openPaymentModal, setOpenPaymentModal] = useState(false);
+  const [closeOpen, setCloseOpen] = useState(false);
+
   const { loading, singleInvoiceData } = useAppSelector(
     (state: any) => state.invoice
   );
@@ -37,8 +40,14 @@ export default function InvoicePreview() {
   }, [id]);
 
   console.log("first singleInvoiceData", singleInvoiceData);
+  const handleOpenPayment = () => {
+    setOpenPaymentModal(true);
+  };
+  const handleClosePayment = () => {
+    setOpenPaymentModal(false);
+  };
   return (
-    <Box className="w-full bg-gray-50 flex flex-col items-center py-6">
+    <Box className="w-full bg-gray-50 flex flex-col items-center py-6 h-screen">
       {loading ? (
         <Box className="h-[550px] flex justify-center items-center">
           <CircularProgress />
@@ -159,22 +168,22 @@ export default function InvoicePreview() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {singleInvoiceData?.items?.map((it, idx) => (
+                  {singleInvoiceData?.items?.map((it: any, idx: number) => (
                     <TableRow key={idx} className="hover:bg-gray-50">
                       <TableCell className="text-gray-800">
-                        {it.itemName}
+                        {it?.itemName}
                       </TableCell>
                       <TableCell className="text-gray-600">
-                        {it.itemDescription}
+                        {it?.itemDescription}
                       </TableCell>
                       <TableCell className="text-gray-700">
-                        {it.cost.toFixed(2)}
+                        {it?.cost.toFixed(2)}
                       </TableCell>
                       <TableCell className="text-gray-700">
-                        {it.quantity}
+                        {it?.quantity}
                       </TableCell>
                       <TableCell className="text-gray-800">
-                        {it.price.toFixed(2)}
+                        {it?.price.toFixed(2)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -201,7 +210,6 @@ export default function InvoicePreview() {
                     </Box>
                   </Box>
 
-                  {/* Brokerage percentage */}
                   <Box className="flex items-center mb-3">
                     <Typography className="!font-semibold !mr-2 text-gray-500">
                       Brokerage Percentage:
@@ -211,7 +219,6 @@ export default function InvoicePreview() {
                     </span>
                   </Box>
 
-                  {/* Brokerage amount */}
                   <Box className="flex items-center mb-3">
                     <Typography className="!font-semibold !mr-2 text-gray-500">
                       Brokerage Amount:
@@ -222,7 +229,6 @@ export default function InvoicePreview() {
                   </Box>
                 </Box>
 
-                {/* Totals */}
                 <Box className="!w-[18%] md:w-64 flex flex-col gap-1 text-right">
                   <Box className="flex justify-between items-center">
                     <span className="text-gray-500">Subtotal:</span>
@@ -255,8 +261,113 @@ export default function InvoicePreview() {
                 </Typography>
               </Box>
             </Box>
+
+            <Box className="mt-8">
+              <Divider className="!my-6" />
+              <Typography className="!text-gray-500 !font-semibold mb-4">
+                Payments
+              </Typography>
+
+              <TableContainer
+                component={Paper}
+                elevation={0}
+                className="rounded-xl border border-gray-200"
+              >
+                <Table aria-label="payments table">
+                  <TableHead>
+                    <TableRow className="bg-white">
+                      <TableCell className="text-gray-600 font-medium">
+                        Date
+                      </TableCell>
+
+                      <TableCell className="text-gray-600 font-medium">
+                        Type
+                      </TableCell>
+                      <TableCell className="text-gray-600 font-medium">
+                        Amount
+                      </TableCell>
+                      <TableCell className="text-gray-600 font-medium">
+                        Description
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {singleInvoiceData?.payments?.length > 0 ? (
+                      singleInvoiceData.payments.map((p: any, idx: number) => (
+                        <TableRow key={idx} className="hover:bg-gray-50">
+                          <TableCell className="text-gray-700">
+                            {
+                              new Date(p.createdDate)
+                                .toISOString()
+                                .split("T")[0]
+                            }
+                          </TableCell>
+
+                          <TableCell className="text-gray-600">
+                            {p.type}
+                          </TableCell>
+                          <TableCell className="text-gray-800 font-medium">
+                            ₹{p.amount.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-gray-600">
+                            {p.description}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={6}
+                          className="text-center text-gray-500 py-6"
+                        >
+                          No payments found
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+
+            <Box className="flex justify-end gap-x-2 mt-4">
+              <Button
+                size="small"
+                variant="contained"
+                color="info"
+                startIcon={<Payment />}
+                onClick={() => setOpenPaymentModal(true)}
+                // disabled={row?.dueAmount === 0}
+              >
+                Pay
+              </Button>
+              {/* {row.dueAmount > 0 && ( */}
+              <Button
+                variant="contained"
+                color="success"
+                onClick={() => {
+                  setCloseOpen(true);
+                }}
+              >
+                Close Payment
+              </Button>
+              {/* )} */}
+            </Box>
           </Card>
         </Box>
+      )}
+      <PaymentModel
+        open={openPaymentModal}
+        setOpen={setOpenPaymentModal}
+        onClose={handleClosePayment}
+        invoice={singleInvoiceData}
+      />
+
+      {closeOpen && (
+        <ClosePaymentPopupMessage
+          open={closeOpen}
+          setOpen={setCloseOpen}
+          invoice={singleInvoiceData}
+        />
       )}
     </Box>
   );

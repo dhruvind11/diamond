@@ -32,6 +32,16 @@ import { MdCurrencyRupee } from "react-icons/md";
 import { FaDownload, FaEdit, FaEye, FaPlus } from "react-icons/fa";
 import { FaDeleteLeft } from "react-icons/fa6";
 import { getCompanyLedger } from "../../store/ledger/ledgerSlice";
+import {
+  Diamond,
+  Event,
+  Inventory2,
+  People,
+  TrendingDown,
+  TrendingUp,
+  Warning,
+} from "@mui/icons-material";
+import DashboardCard from "./DashboardCard";
 
 const Dashboard = () => {
   const { authToken, user } = useAppSelector((state) => state.auth);
@@ -46,55 +56,130 @@ const Dashboard = () => {
     }
   }, [user?.companyId]);
 
-  const ledgerEntries = [
+  const revenueStats = [
     {
-      id: 1,
-      date: "2024-01-15",
-      party: "Rajesh Jewelers",
-      description: "Diamond purchase - 2.5 carat",
-      debit: 125000,
-      credit: 0,
-      balance: 125000,
-      status: "pending",
+      name: "Total Revenue",
+      value: "₹12,45,000",
+      change: "+12.5%",
+      changeType: "increase",
+      // icon: IndianRupee,
     },
     {
-      id: 2,
-      date: "2024-01-14",
-      party: "Mumbai Diamonds",
-      description: "Payment received",
-      debit: 0,
-      credit: 85000,
-      balance: -85000,
-      status: "completed",
+      name: "Total Diamonds",
+      value: "2,847",
+      change: "+156",
+      changeType: "increase",
+      // icon: Gem,
     },
     {
-      id: 3,
-      date: "2024-01-13",
-      party: "Surat Gold House",
-      description: "Gold ornament sale",
-      debit: 0,
-      credit: 45000,
-      balance: -45000,
-      status: "completed",
+      name: "Total Stock Value",
+      value: "₹45,67,000",
+      change: "+8.3%",
+      changeType: "increase",
+      // icon: Package,
     },
     {
-      id: 4,
-      date: "2024-01-12",
-      party: "Delhi Diamond Co.",
-      description: "Advance payment",
-      debit: 32000,
-      credit: 0,
-      balance: 32000,
-      status: "pending",
+      name: "Active Parties",
+      value: "48",
+      change: "+3",
+      changeType: "increase",
+      // icon: Users,
     },
   ];
 
-  const parties = [
-    { name: "Rajesh Jewelers", balance: 125000, type: "receivable" },
-    { name: "Mumbai Diamonds", balance: -85000, type: "payable" },
-    { name: "Surat Gold House", balance: -45000, type: "payable" },
-    { name: "Delhi Diamond Co.", balance: 32000, type: "receivable" },
+  const todayStats = [
+    {
+      name: "Payments Due Today",
+      value: "₹1,25,000",
+      parties: "5 parties",
+      // icon: AlertCircle,
+      color: "text-red-600",
+    },
+    {
+      name: "Expected Receipts",
+      value: "₹85,000",
+      parties: "3 parties",
+      // icon: TrendingUp,
+      color: "text-green-600",
+    },
+    {
+      name: "Stock Sold Today",
+      value: "₹2,45,000",
+      parties: "12 items",
+      // icon: Package,
+      color: "text-blue-600",
+    },
+    {
+      name: "Stock Bought Today",
+      value: "₹1,67,000",
+      parties: "8 items",
+      // icon: Gem,
+      color: "text-purple-600",
+    },
   ];
+
+  const upcomingStats = [
+    {
+      name: "Payments Due (30 days)",
+      value: "₹8,45,000",
+      count: "23 payments",
+      // icon: Calendar,
+      urgency: "high",
+    },
+    {
+      name: "Expected Receivables",
+      value: "₹12,67,000",
+      count: "18 receipts",
+      // icon: TrendingUp,
+      urgency: "medium",
+    },
+    {
+      name: "Stocks to Sell",
+      value: "₹15,23,000",
+      count: "45 items",
+      // icon: Package,
+      urgency: "low",
+    },
+    {
+      name: "Planned Purchases",
+      value: "₹6,78,000",
+      count: "12 orders",
+      // icon: Gem,
+      urgency: "medium",
+    },
+  ];
+
+  const recentTransactions = [
+    {
+      id: 1,
+      party: "Rajesh Jewelers",
+      type: "Payment Received",
+      amount: "+₹45,000",
+      date: "2 hours ago",
+    },
+    {
+      id: 2,
+      party: "Mumbai Diamonds",
+      type: "Invoice Created",
+      amount: "₹1,25,000",
+      date: "4 hours ago",
+    },
+    {
+      id: 3,
+      party: "Surat Gold House",
+      type: "Payment Sent",
+      amount: "-₹32,000",
+      date: "1 day ago",
+    },
+    {
+      id: 4,
+      party: "Delhi Diamond Co.",
+      type: "Payment Received",
+      amount: "+₹78,000",
+      date: "2 days ago",
+    },
+  ];
+
   const dispatch = useAppDispatch();
   useEffect(() => {
     if (accessToken) {
@@ -103,317 +188,286 @@ const Dashboard = () => {
     }
   }, [authToken, accessToken]);
 
+  const revenueData = [
+    {
+      title: "Total Revenue",
+      value: "₹12,45,000",
+      subtitle: "+12.5% from last month",
+      color: "text-green-600",
+      icon: <Inventory2 className="text-gray-500" />,
+      trend: 1,
+    },
+    {
+      title: "Total Diamonds",
+      value: "2,847",
+      subtitle: "+156 from last month",
+      color: "text-blue-600",
+      icon: <Diamond className="text-gray-500" />,
+      trend: 1,
+    },
+    {
+      title: "Total Stock Value",
+      value: "₹45,67,000",
+      subtitle: "+8.3% from last month",
+      color: "text-purple-600",
+      icon: <Inventory2 className="text-gray-500" />,
+      trend: 1,
+    },
+    {
+      title: "Active Parties",
+      value: "48",
+      subtitle: "+3 from last month",
+      color: "text-emerald-600",
+      icon: <People className="text-gray-500" />,
+      trend: 1,
+    },
+  ];
+
+  const todayData = [
+    {
+      title: "Payments Due Today",
+      value: "₹1,25,000",
+      subtitle: "5 parties",
+      color: "text-red-600",
+      icon: <Warning className="text-red-400" />,
+      trend: 0,
+    },
+    {
+      title: "Expected Receipts",
+      value: "₹85,000",
+      subtitle: "3 parties",
+      color: "text-green-600",
+      icon: <TrendingUp className="text-green-500" />,
+      trend: 1,
+    },
+    {
+      title: "Stock Sold Today",
+      value: "₹2,45,000",
+      subtitle: "12 items",
+      color: "text-blue-600",
+      icon: <Inventory2 className="text-blue-500" />,
+      trend: 0,
+    },
+    {
+      title: "Stock Bought Today",
+      value: "₹1,67,000",
+      subtitle: "8 items",
+      color: "text-purple-600",
+      icon: <Diamond className="text-purple-500" />,
+      trend: 0,
+    },
+  ];
+
+  const upcomingData = [
+    {
+      title: "Payments Due (30 days)",
+      value: "₹8,45,000",
+      subtitle: "23 payments",
+      color: "text-red-600",
+      icon: <Event className="text-red-400" />,
+      trend: 0,
+    },
+    {
+      title: "Expected Receivables",
+      value: "₹12,67,000",
+      subtitle: "18 receipts",
+      color: "text-yellow-600",
+      icon: <TrendingUp className="text-yellow-500" />,
+      trend: 1,
+    },
+    {
+      title: "Stocks to Sell",
+      value: "₹15,23,000",
+      subtitle: "45 items",
+      color: "text-green-600",
+      icon: <Inventory2 className="text-green-500" />,
+      trend: 0,
+    },
+    {
+      title: "Planned Purchases",
+      value: "₹6,78,000",
+      subtitle: "12 orders",
+      color: "text-amber-600",
+      icon: <Diamond className="text-amber-500" />,
+      trend: 0,
+    },
+  ];
   return (
-    <Box className="space-y-6">
-      <Card className="shadow-md rounded-2xl">
-        <CardHeader
-          title={
-            <Box className="flex items-center gap-2 text-foreground">
-              <MdCurrencyRupee fontSize="medium" />
-              <Typography variant="h6">
-                Hisab-Kitab (Ledger Management)
-              </Typography>
-            </Box>
-          }
-          subheader="Manage your diamond business accounts, track payments, and maintain financial records"
-        />
-        <CardContent>
-          {/* Tabs */}
-          <Tabs
-            value={tabValue}
-            onChange={(e, val) => setTabValue(val)}
-            className="mb-4"
-          >
-            <Tab label="Ledger Entries" />
-            <Tab label="Party Balances" />
-            <Tab label="Reports" />
-          </Tabs>
+    <Box className="p-6 space-y-10">
+      {/* Revenue Overview */}
+      <Box>
+        <Typography variant="h6" className="mb-4 font-bold">
+          Revenue Overview
+        </Typography>
+        <Box className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {revenueData.map((item, index) => (
+            <DashboardCard key={index} {...item} />
+          ))}
+        </Box>
+      </Box>
 
-          {/* Ledger Entries */}
-          {tabValue === 0 && (
-            <Box className="space-y-4">
-              {/* Search & Filter */}
-              <Box className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <Box className="flex flex-1 items-center gap-2">
-                  <TextField
-                    size="small"
-                    placeholder="Search transactions..."
-                    // value={searchTerm}
-                    // onChange={(e) => setSearchTerm(e.target.value)}
-                    slotProps={{
-                      input: {
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            &#128269;
-                          </InputAdornment>
-                        ),
-                      },
-                    }}
-                    className="max-w-sm"
-                  />
-                  <FormControl size="small" className="w-32">
-                    <InputLabel>Filter</InputLabel>
-                    <Select label="Filter" defaultValue="all">
-                      <MenuItem value="all">All</MenuItem>
-                      <MenuItem value="pending">Pending</MenuItem>
-                      <MenuItem value="completed">Completed</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Box>
-                <Box className="flex gap-2">
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    // startIcon={<Download />}
-                  >
-                    Export
-                  </Button>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    startIcon={<FaPlus />}
-                  >
-                    Add Entry
-                  </Button>
-                </Box>
-              </Box>
+      {/* Today's Overview */}
+      <Box>
+        <Typography variant="h6" className="mb-4 font-bold">
+          Today's Overview
+        </Typography>
+        <Box className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {todayData.map((item, index) => (
+            <DashboardCard key={index} {...item} />
+          ))}
+        </Box>
+      </Box>
 
-              {/* Ledger Table */}
-              <Box className="overflow-x-auto rounded-md border">
-                <TableContainer
-                  component={Paper}
-                  sx={{ borderRadius: 2, boxShadow: 2 }}
-                >
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        {[
-                          "Date",
-                          "Party",
-                          "Description",
-                          "Debit",
-                          "Credit",
-                          "Balance",
-                          "Status",
-                          "Actions",
-                        ].map((col) => (
-                          <TableCell
-                            key={col}
-                            sx={{ fontWeight: "bold", color: "text.secondary" }}
-                          >
-                            {col}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    </TableHead>
+      <Box>
+        <Typography variant="h6" className="mb-4 font-bold">
+          Upcoming (Next 30 Days)
+        </Typography>
+        <Box className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {upcomingData.map((item, index) => (
+            <DashboardCard key={index} {...item} />
+          ))}
+        </Box>
+      </Box>
 
-                    <TableBody>
-                      {ledgerEntries.map((entry) => (
-                        <TableRow key={entry.id} hover>
-                          <TableCell>{entry.date}</TableCell>
-                          <TableCell sx={{ fontWeight: 500 }}>
-                            {entry.party}
-                          </TableCell>
-                          <TableCell sx={{ color: "text.secondary" }}>
-                            {entry.description}
-                          </TableCell>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
+        {/* Today's Due Payments */}
+        <Card className="rounded-2xl shadow-sm border border-orange-200 bg-orange-50">
+          <CardContent>
+            <h3 className="text-sm font-medium text-orange-800">
+              Today's Due Payments
+            </h3>
+            <p className="text-2xl font-bold text-orange-600 mt-2">₹232,000</p>
+            <p className="text-sm text-orange-700">3 payments due</p>
+            <div className="mt-3 space-y-1 text-sm">
+              <div className="flex justify-between text-orange-700">
+                <span>Rajesh Jewelers</span>
+                <span>₹125,000</span>
+              </div>
+              <div className="flex justify-between text-orange-700">
+                <span>Delhi Diamond Co.</span>
+                <span>₹32,000</span>
+              </div>
+              <p className="text-orange-600 cursor-pointer">+1 more</p>
+            </div>
+          </CardContent>
+        </Card>
 
-                          {/* Debit */}
-                          <TableCell
-                            // align="right"
-                            sx={{
-                              color:
-                                entry.debit > 0
-                                  ? "error.main"
-                                  : "text.disabled",
-                            }}
-                          >
-                            {entry.debit > 0
-                              ? `₹${entry.debit.toLocaleString()}`
-                              : "-"}
-                          </TableCell>
+        {/* Today's Received */}
+        <Card className="rounded-2xl shadow-sm border border-green-200 bg-green-50">
+          <CardContent>
+            <h3 className="text-sm font-medium text-green-800">
+              Today's Received
+            </h3>
+            <p className="text-2xl font-bold text-green-600 mt-2">₹130,000</p>
+            <p className="text-sm text-green-700">2 payments received</p>
+            <div className="mt-3 space-y-1 text-sm">
+              <div className="flex justify-between text-green-700">
+                <span>Mumbai Diamonds</span>
+                <span>₹85,000</span>
+              </div>
+              <div className="flex justify-between text-green-700">
+                <span>Surat Gold House</span>
+                <span>₹45,000</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-                          {/* Credit */}
-                          <TableCell
-                            // align="right"
-                            sx={{
-                              color:
-                                entry.credit > 0
-                                  ? "success.main"
-                                  : "text.disabled",
-                            }}
-                          >
-                            {entry.credit > 0
-                              ? `₹${entry.credit.toLocaleString()}`
-                              : "-"}
-                          </TableCell>
+        {/* Net Today */}
+        <Card className="rounded-2xl shadow-sm border border-blue-200 bg-blue-50">
+          <CardContent>
+            <h3 className="text-sm font-medium text-blue-800">Net Today</h3>
+            <p className="text-2xl font-bold text-red-600 mt-2">₹102,000</p>
+            <p className="text-sm text-blue-700">Net due</p>
+            <div className="mt-3 text-sm text-blue-700 space-y-1">
+              <p>
+                <span className="font-medium">Received:</span> ₹130,000
+              </p>
+              <p>
+                <span className="font-medium">Due:</span> ₹232,000
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-                          <TableCell
-                            // align="right"
-                            sx={{
-                              fontWeight: "bold",
-                              color:
-                                entry.balance > 0
-                                  ? "error.main"
-                                  : "success.main",
-                            }}
-                          >
-                            ₹{Math.abs(entry.balance).toLocaleString()}
-                          </TableCell>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+        {/* Monthly Summary */}
+        <Card className="rounded-2xl shadow-sm border border-gray-200">
+          <CardContent>
+            <h3 className="text-lg font-semibold text-gray-800">
+              Monthly Summary
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Financial overview for current month
+            </p>
 
-                          {/* Status */}
-                          <TableCell>
-                            <Chip
-                              size="small"
-                              label={entry.status}
-                              color={
-                                entry.status === "completed"
-                                  ? "success"
-                                  : "warning"
-                              }
-                              variant="outlined"
-                            />
-                          </TableCell>
+            <div className="flex justify-between text-sm mb-2">
+              <span className="font-medium text-gray-700">
+                Total Receivables:
+              </span>
+              <span className="font-semibold text-red-600">₹1,57,000</span>
+            </div>
 
-                          {/* Actions */}
-                          <TableCell>
-                            <IconButton size="small">
-                              <FaEye fontSize="small" />
-                            </IconButton>
-                            <IconButton size="small">
-                              <FaEdit fontSize="small" />
-                            </IconButton>
-                            <IconButton size="small" color="error">
-                              <FaDeleteLeft fontSize="small" />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Box>
-            </Box>
-          )}
+            <div className="flex justify-between text-sm mb-2">
+              <span className="font-medium text-gray-700">Total Payables:</span>
+              <span className="font-semibold text-green-600">₹1,30,000</span>
+            </div>
 
-          {/* Party Balances */}
-          {tabValue === 1 && (
-            <Grid container spacing={2}>
-              {parties.map((party, i) => (
-                <Grid item xs={12} md={6} key={i}>
-                  <Card className="rounded-xl border">
-                    <CardHeader
-                      title={
-                        <Box className="flex items-center justify-between">
-                          <Typography variant="subtitle1">
-                            {party.name}
-                          </Typography>
-                          <Chip
-                            size="small"
-                            label={
-                              party.type === "receivable"
-                                ? "To Receive"
-                                : "To Pay"
-                            }
-                            color={
-                              party.type === "receivable" ? "error" : "success"
-                            }
-                          />
-                        </Box>
-                      }
-                    />
-                    <CardContent>
-                      <Typography
-                        variant="h5"
-                        className={
-                          party.balance > 0 ? "text-red-600" : "text-green-600"
-                        }
-                      >
-                        ₹{Math.abs(party.balance).toLocaleString()}
-                      </Typography>
-                      <Box className="mt-4 flex gap-2">
-                        <Button variant="outlined" size="small">
-                          View Details
-                        </Button>
-                        <Button variant="contained" size="small">
-                          Record Payment
-                        </Button>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          )}
+            <Divider className="my-2" />
 
-          {/* Reports */}
-          {tabValue === 2 && (
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <Card>
-                  <CardHeader
-                    title="Monthly Summary"
-                    subheader="Financial overview for current month"
-                  />
-                  <CardContent>
-                    <Box className="flex justify-between mb-2">
-                      <span className="text-gray-500">Total Receivables:</span>
-                      <span className="font-medium text-red-600">
-                        ₹1,57,000
-                      </span>
-                    </Box>
-                    <Box className="flex justify-between mb-2">
-                      <span className="text-gray-500">Total Payables:</span>
-                      <span className="font-medium text-green-600">
-                        ₹1,30,000
-                      </span>
-                    </Box>
-                    <Divider />
-                    <Box className="flex justify-between mt-2">
-                      <span className="font-medium">Net Position:</span>
-                      <span className="font-bold text-red-600">₹27,000</span>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
+            <div className="flex justify-between text-sm">
+              <span className="font-medium text-gray-700">Net Position:</span>
+              <span className="font-semibold text-red-600">₹27,000</span>
+            </div>
+          </CardContent>
+        </Card>
 
-              <Grid item xs={12} md={6}>
-                <Card>
-                  <CardHeader
-                    title="Quick Reports"
-                    subheader="Generate detailed financial reports"
-                  />
-                  <CardContent>
-                    <Button
-                      variant="outlined"
-                      fullWidth
-                      className="mb-2"
-                      startIcon={<FaDownload />}
-                    >
-                      Party-wise Statement
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      fullWidth
-                      className="mb-2"
-                      startIcon={<FaDownload />}
-                    >
-                      Monthly Ledger
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      fullWidth
-                      startIcon={<FaDownload />}
-                    >
-                      Outstanding Report
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
-          )}
-        </CardContent>
-      </Card>
+        {/* Yearly Summary */}
+        <Card className="rounded-2xl shadow-sm border border-gray-200">
+          <CardContent>
+            <h3 className="text-lg font-semibold text-gray-800">
+              Yearly Summary (2024)
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Annual financial overview and performance
+            </p>
+
+            <div className="flex justify-between text-sm mb-2">
+              <span className="font-medium text-gray-700">Total Revenue:</span>
+              <span className="font-semibold text-blue-600">₹18,45,000</span>
+            </div>
+
+            <div className="flex justify-between text-sm mb-2">
+              <span className="font-medium text-gray-700">
+                Total Transactions:
+              </span>
+              <span className="font-semibold text-gray-800">1,247</span>
+            </div>
+
+            <div className="flex justify-between text-sm mb-2">
+              <span className="font-medium text-gray-700">
+                Broker Commissions:
+              </span>
+              <span className="font-semibold text-orange-600">₹92,250</span>
+            </div>
+
+            <div className="flex justify-between text-sm mb-2">
+              <span className="font-medium text-gray-700">
+                Outstanding Amount:
+              </span>
+              <span className="font-semibold text-red-600">₹3,27,000</span>
+            </div>
+
+            <Divider className="my-2" />
+
+            <div className="flex justify-between text-sm mb-1">
+              <span className="font-medium text-gray-700">Net Profit:</span>
+              <span className="font-semibold text-green-600">₹4,25,750</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </Box>
   );
 };

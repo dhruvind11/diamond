@@ -7,14 +7,17 @@ import {
   TableHead,
   TableRow,
   Typography,
-  IconButton,
   Chip,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
   Box,
+  Divider,
 } from "@mui/material";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { Link, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../store/store";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { getPartyLedger } from "../../store/ledger/ledgerSlice";
 
 function PartyLedgerDetail() {
@@ -31,109 +34,195 @@ function PartyLedgerDetail() {
     }
   }, [user?.companyId, id]);
 
+  const grouped = useMemo(() => {
+    if (!singlePartyLedgerData?.invoices) return [];
+
+    const result = singlePartyLedgerData.invoices.reduce(
+      (acc: any, txn: any) => {
+        if (!acc[txn.invoiceId]) {
+          acc[txn.invoiceId] = {
+            invoiceId: txn.invoiceId,
+            entries: [],
+            totalDebit: 0,
+            totalCredit: 0,
+            balance: 0,
+          };
+        }
+
+        acc[txn.invoiceId].entries.push(txn);
+
+        if (txn.type === "debit") {
+          acc[txn.invoiceId].totalDebit += txn.amount;
+        } else {
+          acc[txn.invoiceId].totalCredit += txn.amount;
+        }
+
+        acc[txn.invoiceId].balance =
+          acc[txn.invoiceId].totalCredit - acc[txn.invoiceId].totalDebit;
+
+        return acc;
+      },
+      {}
+    );
+
+    return Object.values(result);
+  }, [singlePartyLedgerData]);
+
   return (
-    <div className="m-6">
-      <Typography variant="h4" gutterBottom>
+    <div className="m-8 space-y-6">
+      {/* Header */}
+      <Typography variant="h4" fontWeight="bold" gutterBottom>
         {singlePartyLedgerData?.partyName} – Ledger Details
       </Typography>
 
-      <Card className="mb-4">
+      {/* Total Balance Card */}
+      <Card
+        sx={{
+          p: 2,
+          borderRadius: "16px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+          background: "linear-gradient(135deg, #f0f9ff, #e0f7fa)",
+        }}
+      >
         <CardContent>
-          <Typography variant="h6">Total Balance</Typography>
+          <Typography variant="h6" color="text.secondary">
+            Total Balance
+          </Typography>
           <Typography
-            variant="h5"
-            className={
-              singlePartyLedgerData?.totalAmount >= 0
-                ? "!text-green-600"
-                : "!text-red-600"
-            }
+            variant="h4"
+            fontWeight="bold"
+            sx={{
+              color:
+                singlePartyLedgerData?.totalAmount >= 0
+                  ? "success.main"
+                  : "error.main",
+            }}
           >
             ₹{singlePartyLedgerData?.totalAmount?.toFixed(2)}
           </Typography>
         </CardContent>
       </Card>
 
-      <Card>
+      {/* Transactions */}
+      <Card
+        sx={{ borderRadius: "16px", boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}
+      >
         <CardContent>
-          <Typography variant="h6" gutterBottom>
+          <Typography variant="h6" gutterBottom fontWeight="bold">
             Transactions
           </Typography>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>
-                  <b>Sr No</b>
-                </TableCell>
-                <TableCell>
-                  <b>Description</b>
-                </TableCell>
-                <TableCell>
-                  <b>Date</b>
-                </TableCell>
-                <TableCell align="right">
-                  <b>Debit</b>
-                </TableCell>
-                <TableCell align="right">
-                  <b>Credit</b>
-                </TableCell>
-                <TableCell align="right">
-                  <b>Balance</b>
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {singlePartyLedgerData?.invoices?.map(
-                (inv: any, index: number) => (
-                  <TableRow key={inv.invoiceId}>
-                    <TableCell>{index + 1}</TableCell>
+          <Divider sx={{ mb: 2 }} />
 
-                    <TableCell>
-                      <Box className="flex items-center gap-2">
-                        {inv.description || "—"}
-                        {inv.invoiceId && (
-                          <Link
-                            to={`/preview-invoice/${inv.invoiceId}`}
-                            className="text-blue-600 hover:underline text-sm"
-                          >
-                            View Invoice
-                          </Link>
-                        )}
-
-                        {inv.type === "credit brokerage" && (
-                          <Chip label="Commission" />
-                        )}
-                      </Box>
-                    </TableCell>
-
-                    <TableCell>
-                      {new Date(inv.createdAt).toLocaleDateString()}
-                    </TableCell>
-
-                    <TableCell
-                      align="right"
-                      className="!text-red-600 !font-bold"
+          {grouped?.map((invoice: any, index) => (
+            <Accordion
+              defaultExpanded
+              key={invoice.invoiceId}
+              sx={{
+                mb: 2,
+                borderRadius: "12px !important",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                "&:before": { display: "none" },
+              }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Box sx={{ flex: 1 }}>
+                  <Typography fontWeight="bold" variant="subtitle1">
+                    Invoice #{index + 1}{" "}
+                    {invoice.invoiceId && (
+                      <Link
+                        to={`/preview-invoice/${invoice.invoiceId}`}
+                        style={{
+                          marginLeft: "8px",
+                          fontSize: "0.85rem",
+                          color: "#1976d2",
+                          textDecoration: "underline",
+                        }}
+                      >
+                        View Invoice
+                      </Link>
+                    )}
+                  </Typography>
+                  {/* <Typography variant="body2" color="text.secondary">
+                    Debit:{" "}
+                    <b style={{ color: "#d32f2f" }}>{invoice.totalDebit}</b> |
+                    Credit:{" "}
+                    <b style={{ color: "#2e7d32" }}>{invoice.totalCredit}</b> |
+                    Balance:{" "}
+                    <b
+                      style={{
+                        color: invoice.balance >= 0 ? "#2e7d32" : "#d32f2f",
+                      }}
                     >
-                      {inv.type === "debit" ? inv?.amount?.toFixed(2) : "0.00"}
-                    </TableCell>
-
-                    <TableCell
-                      align="right"
-                      className="!text-green-500 !font-bold"
-                    >
-                      {inv.type === "credit" || inv.type === "credit brokerage"
-                        ? inv?.amount?.toFixed(2)
-                        : "0.00"}
-                    </TableCell>
-
-                    {/* Balance (you’ll probably calculate running balance in backend or here) */}
-                    <TableCell align="right">
-                      {inv.amount?.toFixed(2) ?? "—"}
-                    </TableCell>
-                  </TableRow>
-                )
-              )}
-            </TableBody>
-          </Table>
+                      {invoice.balance}
+                    </b>
+                  </Typography> */}
+                </Box>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow sx={{ background: "#f9fafb" }}>
+                      <TableCell>Date</TableCell>
+                      <TableCell>Description</TableCell>
+                      <TableCell>Type</TableCell>
+                      <TableCell align="right">Amount</TableCell>
+                      <TableCell align="right">Pending Amount</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {invoice.entries.map((entry: any, i: any) => (
+                      <TableRow
+                        key={i}
+                        sx={{
+                          "&:hover": { backgroundColor: "#f5f5f5" },
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        <TableCell>
+                          {
+                            new Date(entry.createdDate)
+                              .toISOString()
+                              .split("T")[0]
+                          }
+                        </TableCell>
+                        <TableCell>
+                          {entry.description}
+                          {entry.type === "credit brokerage" && (
+                            <Chip
+                              label="Commission"
+                              size="small"
+                              sx={{
+                                ml: 1,
+                                background: "#e3f2fd",
+                                color: "#1976d2",
+                              }}
+                            />
+                          )}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            color:
+                              entry.type === "debit"
+                                ? "error.main"
+                                : "success.main",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {entry.type}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontWeight: "bold" }}>
+                          ₹{entry.amount.toFixed(2)}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontWeight: "bold" }}>
+                          ₹{entry.pendingAmount.toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </AccordionDetails>
+            </Accordion>
+          ))}
         </CardContent>
       </Card>
     </div>
