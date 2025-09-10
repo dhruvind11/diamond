@@ -101,6 +101,24 @@ export const makePayment = createAsyncThunk(
   }
 );
 
+export const closePayment = createAsyncThunk(
+  "invoice/closePayment",
+  async (
+    { invoiceId, paymentData }: { invoiceId: string; paymentData: any },
+    { rejectWithValue }
+  ) => {
+    try {
+      const { data } = await AxiosRequest.post(
+        `/invoice/close-payment/${invoiceId}`,
+        paymentData
+      );
+      return data?.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || "Something went wrong");
+    }
+  }
+);
+
 export const invoiceSlice = createSlice({
   name: "invoice",
   initialState,
@@ -196,6 +214,30 @@ export const invoiceSlice = createSlice({
       .addCase(makePayment.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+      })
+      .addCase(closePayment.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(closePayment.fulfilled, (state, action: PayloadAction<any>) => {
+        state.loading = false;
+        const updatedInvoice = action.payload?.invoice;
+
+        // update invoice in list
+        state.invoiceData = state.invoiceData.map((invoice: any) =>
+          invoice._id === updatedInvoice._id ? updatedInvoice : invoice
+        );
+
+        // update singleInvoiceData if it matches
+        if (state.singleInvoiceData?._id === updatedInvoice._id) {
+          state.singleInvoiceData = updatedInvoice;
+        }
+
+        toast.success("Invoice closed successfully (discount applied)");
+      })
+      .addCase(closePayment.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
       });
   },
 });
@@ -204,3 +246,4 @@ export const {} = invoiceSlice.actions;
 // export const selectinvoice = (state: RootState) => state.invoice;
 
 export default invoiceSlice.reducer;
+

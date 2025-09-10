@@ -21,6 +21,7 @@ import { getInvoiceById } from "../../store/invoice/invoiceSlice";
 import { Payment } from "@mui/icons-material";
 import PaymentModel from "./PaymentModel";
 import ClosePaymentPopupMessage from "../../components/ClosePaymentPopupMessage";
+import { formatDate } from "../../utils/dateFormatter";
 
 export default function InvoicePreview() {
   const { company } = useAppSelector((state) => state.auth);
@@ -39,15 +40,11 @@ export default function InvoicePreview() {
     }
   }, [id]);
 
-  console.log("first singleInvoiceData", singleInvoiceData);
-  const handleOpenPayment = () => {
-    setOpenPaymentModal(true);
-  };
   const handleClosePayment = () => {
     setOpenPaymentModal(false);
   };
   return (
-    <Box className="w-full bg-gray-50 flex flex-col items-center py-6 h-screen">
+    <Box className="w-full bg-gray-50 flex flex-col items-center py-6">
       {loading ? (
         <Box className="h-[550px] flex justify-center items-center">
           <CircularProgress />
@@ -93,9 +90,7 @@ export default function InvoicePreview() {
                   <span className="text-gray-500">Date Issued:</span>
                   <span className="text-gray-500 font-semibold">
                     {singleInvoiceData?.createdAt
-                      ? new Date(singleInvoiceData.createdAt)
-                          .toISOString()
-                          .split("T")[0]
+                      ? formatDate(singleInvoiceData?.createdAt)
                       : ""}
                   </span>
                 </Box>
@@ -103,9 +98,7 @@ export default function InvoicePreview() {
                   <span className="text-gray-500">Due Date:</span>
                   <span className="text-gray-500 font-semibold">
                     {singleInvoiceData?.dueDate
-                      ? new Date(singleInvoiceData.dueDate)
-                          .toISOString()
-                          .split("T")[0]
+                      ? formatDate(singleInvoiceData?.dueDate)
                       : ""}
                   </span>
                 </Box>
@@ -287,6 +280,9 @@ export default function InvoicePreview() {
                         Amount
                       </TableCell>
                       <TableCell className="text-gray-600 font-medium">
+                        Pending Amount
+                      </TableCell>
+                      <TableCell className="text-gray-600 font-medium">
                         Description
                       </TableCell>
                     </TableRow>
@@ -296,11 +292,7 @@ export default function InvoicePreview() {
                       singleInvoiceData.payments.map((p: any, idx: number) => (
                         <TableRow key={idx} className="hover:bg-gray-50">
                           <TableCell className="text-gray-700">
-                            {
-                              new Date(p.createdDate)
-                                .toISOString()
-                                .split("T")[0]
-                            }
+                            {formatDate(p?.createdDate)}
                           </TableCell>
 
                           <TableCell className="text-gray-600">
@@ -308,6 +300,9 @@ export default function InvoicePreview() {
                           </TableCell>
                           <TableCell className="text-gray-800 font-medium">
                             ₹{p.amount.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-gray-800 font-medium">
+                            ₹{p.pendingAmount.toLocaleString()}
                           </TableCell>
                           <TableCell className="text-gray-600">
                             {p.description}
@@ -336,21 +331,22 @@ export default function InvoicePreview() {
                 color="info"
                 startIcon={<Payment />}
                 onClick={() => setOpenPaymentModal(true)}
-                // disabled={row?.dueAmount === 0}
+                sx={{ textTransform: "capitalize" }}
+                disabled={singleInvoiceData?.dueAmount === 0}
               >
                 Pay
               </Button>
-              {/* {row.dueAmount > 0 && ( */}
               <Button
                 variant="contained"
                 color="success"
                 onClick={() => {
                   setCloseOpen(true);
                 }}
+                sx={{ textTransform: "capitalize" }}
+                disabled={singleInvoiceData?.dueAmount === 0}
               >
-                Close Payment
+                Close Invoice
               </Button>
-              {/* )} */}
             </Box>
           </Card>
         </Box>
@@ -360,6 +356,7 @@ export default function InvoicePreview() {
         setOpen={setOpenPaymentModal}
         onClose={handleClosePayment}
         invoice={singleInvoiceData}
+        isPreviewPage={true}
       />
 
       {closeOpen && (
@@ -367,6 +364,7 @@ export default function InvoicePreview() {
           open={closeOpen}
           setOpen={setCloseOpen}
           invoice={singleInvoiceData}
+          isPreviewPage={true}
         />
       )}
     </Box>

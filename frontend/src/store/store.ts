@@ -5,12 +5,14 @@ import authReducer from "./auth/authSlice";
 import userReducer from "./user/userSlice";
 import invoiceReducer from "./invoice/invoiceSlice";
 import ledgerReducer from "./ledger/ledgerSlice";
+import dashboardReducer from "./dashboard/dashboardSlice";
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     user: userReducer,
     invoice: invoiceReducer,
     ledger: ledgerReducer,
+    dashboard: dashboardReducer,
   },
 });
 

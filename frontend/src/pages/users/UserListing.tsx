@@ -3,10 +3,6 @@ import {
   Button,
   Chip,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Paper,
   Table,
   TableBody,
@@ -14,7 +10,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Typography,
 } from "@mui/material";
 import { FaRegEdit, FaSpinner, FaUserCircle } from "react-icons/fa";
 import { MdDelete, MdEmail } from "react-icons/md";
@@ -27,10 +22,10 @@ import {
   resetMessage,
 } from "../../store/user/userSlice";
 import { useAppDispatch, useAppSelector } from "../../store/store";
-import AddCompanyUserForm from "./companyUser/addCompanyUserForm";
 import { TbPencilX } from "react-icons/tb";
 import DeletePopupMessage from "../../components/DeletePopupMessage";
 import EditCompanyUserForm from "./companyUser/EditCompanyUserForm";
+import AddCompanyUserForm from "./companyUser/AddCompanyUserForm";
 
 const UserListing = () => {
   const dispatch = useAppDispatch();
@@ -88,15 +83,6 @@ const UserListing = () => {
             {loading && <FaSpinner className="animate-spin" />}
             <Box className="text-sm font-semibold">{message}</Box>
           </Box>
-
-          {/* <Button
-            size="small"
-            variant="contained"
-            className="!bg-[#3a2ae2b3] !text-xs !rounded-md !py-1.5 !capitalize"
-            onClick={() => handleOpen("broker")}
-          >
-            Add Broker
-          </Button> */}
           <Button
             size="small"
             variant="contained"
@@ -207,18 +193,10 @@ const UserListing = () => {
             setOpenModal={setOpenEditModal}
           />
         )}
-        {/* <TablePagination
-          rowsPerPageOptions={[10, 25, 100]}
-          component="div"
-          count={rows.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        /> */}
       </Paper>
     </Box>
   );
 };
 
 export default UserListing;
+

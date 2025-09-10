@@ -1,11 +1,18 @@
-import { Box, Button, Card, CircularProgress, TextField } from "@mui/material";
+import {
+  Autocomplete,
+  Box,
+  Button,
+  Card,
+  CircularProgress,
+  TextField,
+} from "@mui/material";
 
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import logoImage from "../../../public/eco-5465482_1280.webp";
 import DatePickerComponent from "../../components/DatePickerComponent";
 import SelectComponent from "../../components/SelectComponent";
-import { useEffect, useState } from "react";
-import { getAllCompanyUser } from "../../store/user/userSlice";
+import { useCallback, useEffect, useState } from "react";
+import { getAllCompanyUser, getUserDropdown } from "../../store/user/userSlice";
 import InvoiceItemsSection from "./InvoiceItemsSection";
 import InvoiceSummarySection from "./InvoiceSummarySection";
 import dayjs from "dayjs";
@@ -14,13 +21,20 @@ import {
   getNextInvoiceNumber,
 } from "../../store/invoice/invoiceSlice";
 import { useLocation, useNavigate } from "react-router-dom";
+import { debounce } from "lodash";
+import { FaSpinner } from "react-icons/fa";
 
 const AddInvoice = () => {
   const dispatch = useAppDispatch();
   const location = useLocation();
   const navigate = useNavigate();
   const { company, user, loading } = useAppSelector((state) => state.auth);
-  const { companyUsers } = useAppSelector((state) => state.user);
+  const {
+    companyUsers,
+    userDropdown,
+    userSearchingLoader,
+    userSearchingMessage,
+  } = useAppSelector((state) => state.user);
   const { nextInvoiceNumber } = useAppSelector((state) => state.invoice);
   const invoiceType = location.state?.invoiceType || "sell";
   const [errors, setErrors] = useState<any>({});
@@ -122,6 +136,7 @@ const AddInvoice = () => {
     setErrors((prev: any) => ({ ...prev, [name]: "" }));
   };
   const handleSelectChange = (option: any, name: string) => {
+    console.log("option", option, name);
     setFormData((prev: any) => ({
       ...prev,
       [name]: option,
@@ -189,24 +204,40 @@ const AddInvoice = () => {
   };
   const getOption = () => {
     const option =
-      companyUsers?.length > 0
-        ? companyUsers
-            ?.filter((user: any) => user.role === "Party")
-            ?.map((user: any) => {
-              return {
-                label: user?.username,
-                value: user?._id,
-                email: user?.email,
-                address: user?.address || "",
-                bankName: user?.bankName || "",
-                accountNo: user?.accountNo || "",
-                ifscCode: user?.ifscCode || "",
-              };
-            })
+      userDropdown?.length > 0
+        ? userDropdown?.map((user: any) => {
+            return {
+              label: user?.username,
+              value: user?._id,
+              email: user?.email,
+              // address: user?.address || "",
+              // bankName: user?.bankName || "",
+              // accountNo: user?.accountNo || "",
+              // ifscCode: user?.ifscCode || "",
+            };
+          })
         : [];
     return option;
   };
 
+  // const onChangeEventHandlerSelect = (
+  //   value: string | object | string[] | object[] | null,
+  //   name: string
+  // ): void => {
+  //   let selectedValue;
+
+  // };
+
+  const debouncedSearch = useCallback(
+    debounce((value: string) => {
+      dispatch(getUserDropdown({ companyId: user.companyId, search: value }));
+    }, 1000),
+    [user.companyId]
+  );
+
+  const handleInputSelectChange = (value: string): void => {
+    debouncedSearch(value);
+  };
   useEffect(() => {
     if (user?.companyId) {
       dispatch(getAllCompanyUser({ companyId: user.companyId }));
@@ -324,7 +355,7 @@ const AddInvoice = () => {
     navigate("/invoice");
   };
 
-  console.log("formData?.createdDate", formData?.createdDate);
+  console.log("formData?.createdDate", formData);
   return (
     <Box className="w-full bg-gray-50 flex flex-col items-center py-6">
       {loading ? (
@@ -421,10 +452,18 @@ const AddInvoice = () => {
             <Box className="grid grid-cols-2">
               {invoiceType !== "sell" && (
                 <Box className="">
+                  {/* <Box className="flex items-center gap-x-1.5 text-[#A54EB0]">
+                    {userSearchingLoader && (
+                      <FaSpinner className="animate-spin" />
+                    )}
+                    <Box className="text-sm font-semibold">
+                      {userSearchingMessage}
+                    </Box>
+                  </Box> */}
                   <Box className="!font-semibold !mb-1 text-gray-500">
                     Seller:
                   </Box>
-                  <SelectComponent
+                  {/* <SelectComponent
                     options={getOption()}
                     name="seller"
                     id="seller"
@@ -432,7 +471,54 @@ const AddInvoice = () => {
                     onChange={(option: any) =>
                       handleSelectChange(option, "seller")
                     }
+                  /> */}
+                  <Autocomplete
+                    className="mb-2.5"
+                    freeSolo
+                    options={getOption()}
+                    id="seller"
+                    value={formData.seller}
+                    onChange={(_, option: any) =>
+                      handleSelectChange(option, "seller")
+                    }
+                    onInputChange={(_, value) => {
+                      handleInputSelectChange(value);
+                    }}
+                    renderOption={(props, option: any) => {
+                      return (
+                        <li {...props} key={props.id}>
+                          {option.label ? option?.label : option}
+                        </li>
+                      );
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        placeholder="Please search"
+                        className="!rounded-lg !px-1"
+                        sx={{
+                          "&.MuiTextField-root": {
+                            border: "1px solid #d3d3d3",
+                            "&:focus-within fieldset, &:focus-visible fieldset, & fieldset":
+                              {
+                                border: 0,
+                                padding: 0,
+                              },
+                            "& .MuiInputBase-root": {
+                              padding: 0,
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& input": {
+                                color: "black",
+                                paddingLeft: "10px",
+                              },
+                            },
+                          },
+                        }}
+                      />
+                    )}
                   />
+
                   {errors?.seller && (
                     <span className="text-xs text-[red]">{errors?.seller}</span>
                   )}
@@ -447,10 +533,18 @@ const AddInvoice = () => {
               <Box className="">
                 {invoiceType !== "buy" && (
                   <>
+                    {/* <Box className="flex items-center gap-x-1.5 text-[#A54EB0]">
+                      {userSearchingLoader && (
+                        <FaSpinner className="animate-spin" />
+                      )}
+                      <Box className="text-sm font-semibold">
+                        {userSearchingMessage}
+                      </Box>
+                    </Box> */}
                     <Box className="!font-semibold !mb-1 text-gray-500">
                       Buyer:
                     </Box>
-                    <SelectComponent
+                    {/* <SelectComponent
                       options={getOption()}
                       name="buyer"
                       id="buyer"
@@ -458,7 +552,54 @@ const AddInvoice = () => {
                       onChange={(option: any) =>
                         handleSelectChange(option, "buyer")
                       }
+                    /> */}
+                    <Autocomplete
+                      className="mb-2.5"
+                      freeSolo
+                      options={getOption()}
+                      id="buyer"
+                      value={formData.buyer}
+                      onChange={(_, option: any) =>
+                        handleSelectChange(option, "buyer")
+                      }
+                      onInputChange={(_, value) => {
+                        handleInputSelectChange(value);
+                      }}
+                      renderOption={(props, option: any) => {
+                        return (
+                          <li {...props} key={props.id}>
+                            {option.label ? option?.label : option}
+                          </li>
+                        );
+                      }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          placeholder="Please search"
+                          className="!rounded-lg !px-1"
+                          sx={{
+                            "&.MuiTextField-root": {
+                              border: "1px solid #d3d3d3",
+                              "&:focus-within fieldset, &:focus-visible fieldset, & fieldset":
+                                {
+                                  border: 0,
+                                  padding: 0,
+                                },
+                              "& .MuiInputBase-root": {
+                                padding: 0,
+                              },
+                              "& .MuiOutlinedInput-root": {
+                                "& input": {
+                                  color: "black",
+                                  paddingLeft: "10px",
+                                },
+                              },
+                            },
+                          }}
+                        />
+                      )}
                     />
+
                     {errors?.buyer && (
                       <span className="text-xs text-[red]">
                         {errors?.buyer}
@@ -466,7 +607,7 @@ const AddInvoice = () => {
                     )}
                     {formData?.buyer && (
                       <Box className="!mt-2 !text-gray-600">
-                        <Box>{formData?.seller?.email}</Box>
+                        <Box>{formData?.buyer?.email}</Box>
                       </Box>
                     )}
                   </>
@@ -487,8 +628,11 @@ const AddInvoice = () => {
               tax={formData.tax}
               subTotal={formData.subTotal}
               handleSummaryChange={handleSummaryChange}
+              handleInputSelectChange={handleInputSelectChange}
               getBrokerOption={getOption}
               items={formData.items}
+              formData={formData}
+              invoiceType={invoiceType}
               brokeragePercentage={formData?.brokeragePercentage}
               errors={errors}
             />

@@ -6,25 +6,28 @@ import {
   DialogContent,
   DialogTitle,
   TextField,
+  Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import DatePickerComponent from "../../components/DatePickerComponent";
 import { FaRupeeSign } from "react-icons/fa";
 import dayjs from "dayjs";
 import { useAppDispatch } from "../../store/store";
-import { makePayment } from "../../store/invoice/invoiceSlice";
+import { getInvoiceById, makePayment } from "../../store/invoice/invoiceSlice";
 
 interface PaymentModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   onClose: () => void;
   invoice: any;
+  isPreviewPage?: boolean;
 }
 const PaymentModel = ({
   open,
   setOpen,
   onClose,
   invoice,
+  isPreviewPage,
 }: PaymentModalProps) => {
   const [paymentForm, setPaymentForm] = useState<any>({
     createdDate: null,
@@ -78,17 +81,20 @@ const PaymentModel = ({
     }
     return true;
   };
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) return;
 
     console.log("paymentForm", paymentForm);
     if (invoice?._id) {
-      dispatch(
+      await dispatch(
         makePayment({
           invoiceId: invoice?._id,
           paymentData: paymentForm,
         })
       );
+      if (isPreviewPage) {
+        await dispatch(getInvoiceById({ invoiceId: invoice?._id }));
+      }
     }
     setOpen(false);
   };
@@ -100,11 +106,32 @@ const PaymentModel = ({
         {invoice?.invoiceType === "buy" ? "Make" : "Receive"} Payment
       </DialogTitle>
       <DialogContent dividers>
-        <Box className="flex justify-between bg-gray-100 p-2 mb-4">
-          <Box className="mb-0">Due Invoice Balance:</Box>
-          <Box className="font-medium mb-0 flex items-center">
-            <FaRupeeSign size={14} />
-            {invoice?.dueAmount || 0}
+        <Box className="bg-gray-100 p-3 mb-4 rounded-md space-y-1">
+          <Box className="flex justify-between">
+            <Typography>Total Invoice Amount:</Typography>
+            <Typography className="font-medium flex items-center">
+              <FaRupeeSign size={14} className="mr-1" />
+              {invoice?.totalAmount || 0}
+            </Typography>
+          </Box>
+
+          <Box className="flex justify-between">
+            <Typography>{`${
+              invoice?.invoiceType === "sell" ? "Receive" : "Paid"
+            } Amount:`}</Typography>
+            <Typography className="font-medium flex items-center text-green-600">
+              <FaRupeeSign size={14} className="mr-1" />
+              {Number(invoice?.totalAmount || 0) -
+                Number(invoice?.dueAmount || 0)}
+            </Typography>
+          </Box>
+
+          <Box className="flex justify-between">
+            <Typography>Due Invoice Balance:</Typography>
+            <Typography className="font-medium flex items-center text-red-600">
+              <FaRupeeSign size={14} className="mr-1" />
+              {invoice?.dueAmount || 0}
+            </Typography>
           </Box>
         </Box>
         <Box className="flex flex-col gap-y-4 mt-2">

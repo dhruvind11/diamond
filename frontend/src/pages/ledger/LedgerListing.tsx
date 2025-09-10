@@ -66,7 +66,7 @@ export default function LedgerListing() {
                 Total Receivable
               </Typography>
               <Typography variant="h6" color="green">
-                ₹{ledgerData?.summary?.totalReceivable}
+                ₹{ledgerData?.summary?.totalSellPending}
               </Typography>
             </Box>
           </CardContent>
@@ -89,7 +89,7 @@ export default function LedgerListing() {
                 Total Payable
               </Typography>
               <Typography variant="h6" color="error">
-                ₹{ledgerData?.summary?.totalPayable}
+                ₹{ledgerData?.summary?.totalBuyPending}
               </Typography>
             </Box>
           </CardContent>
@@ -120,7 +120,7 @@ export default function LedgerListing() {
                       : "error.main",
                 }}
               >
-                ₹{ledgerData?.summary?.netBalance?.toFixed(2)}
+                ₹{ledgerData?.summary?.totalAmount?.toFixed(2)}
               </Typography>
             </Box>
           </CardContent>
@@ -175,46 +175,57 @@ export default function LedgerListing() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {ledgerData?.partyLedger?.map((entry: any) => (
-                  <TableRow
-                    key={entry._id}
-                    hover
-                    sx={{
-                      "&:hover": { background: "#f5faff" },
-                      transition: "0.2s",
-                    }}
-                  >
-                    <TableCell sx={{ fontWeight: 500 }}>
-                      {entry.partyName}
-                    </TableCell>
-
-                    <TableCell
-                      align="right"
+                {ledgerData?.partyLedger
+                  ?.filter((entry: any) =>
+                    entry.partyName
+                      .toLowerCase()
+                      .includes(searchTerm.toLowerCase())
+                  )
+                  ?.map((entry: any) => (
+                    <TableRow
+                      key={entry._id}
+                      hover
                       sx={{
-                        fontWeight: "bold",
-                        color: entry?.totalAmount >= 0 ? "green" : "red",
+                        "&:hover": { background: "#f5faff" },
+                        transition: "0.2s",
                       }}
                     >
-                      ₹{entry.totalAmount}
-                    </TableCell>
-                    <TableCell align="center">
-                      <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<Visibility />}
+                      <TableCell sx={{ fontWeight: 500 }}>
+                        {entry.partyName}
+                      </TableCell>
+
+                      <TableCell
+                        className={`${
+                          entry?.totalAmount >= 0
+                            ? "!text-[#81c784]"
+                            : "!text-[#d32f2f]"
+                        }`}
+                        align="right"
                         sx={{
-                          borderRadius: "20px",
-                          textTransform: "none",
-                          boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-                          background: "linear-gradient(90deg,#1976d2,#42a5f5)",
+                          fontWeight: "bold",
                         }}
-                        onClick={() => navigate(`/ledger/${entry._id}`)}
                       >
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                        ₹{entry.totalAmount}
+                      </TableCell>
+                      <TableCell align="center">
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={<Visibility />}
+                          sx={{
+                            borderRadius: "20px",
+                            textTransform: "none",
+                            boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                            background:
+                              "linear-gradient(90deg,#1976d2,#42a5f5)",
+                          }}
+                          onClick={() => navigate(`/ledger/${entry._id}`)}
+                        >
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
           </TableContainer>

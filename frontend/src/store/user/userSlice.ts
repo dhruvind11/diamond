@@ -14,17 +14,23 @@ interface UserStateType {
   createUserLoader: boolean;
   updateUserLoader: boolean;
   deleteUserLoader: boolean;
+  userSearchingLoader: boolean;
+  userSearchingMessage: string;
   loading: boolean;
+  userDropdown: any[];
   error: string | null;
 }
 
 const initialState: UserStateType = {
   companyUsers: [],
+  userDropdown: [],
   singleCompanyUser: {},
   message: "",
   createUserLoader: false,
   updateUserLoader: false,
   deleteUserLoader: false,
+  userSearchingLoader: false,
+  userSearchingMessage: "",
   loading: false,
   error: null,
 };
@@ -35,6 +41,29 @@ export const getAllCompanyUser = createAsyncThunk(
     try {
       const { data } = await AxiosRequest.get(`/users/${companyId}`);
       console.log("data123", data);
+      return data?.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || "Something went wrong");
+    }
+  }
+);
+
+export const getUserDropdown = createAsyncThunk(
+  "user/getUserDropdown",
+  async (
+    { companyId, search }: { companyId: string; search?: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const queryParams = new URLSearchParams({ companyId });
+      if (search) {
+        queryParams.append("search", search);
+      }
+
+      const { data } = await AxiosRequest.get(
+        `/users/user-dropdown?${queryParams.toString()}`
+      );
+
       return data?.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data || "Something went wrong");
@@ -126,6 +155,27 @@ export const userSlice = createSlice({
       )
       .addCase(getAllCompanyUser.rejected, (state, action) => {
         state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(getUserDropdown.pending, (state) => {
+        state.loading = true;
+        state.userSearchingLoader = true;
+        state.userSearchingMessage = "Searching...";
+        state.error = null;
+      })
+      .addCase(
+        getUserDropdown.fulfilled,
+        (state, action: PayloadAction<any[]>) => {
+          state.loading = false;
+          state.userSearchingLoader = false;
+          state.userSearchingMessage = "";
+          state.userDropdown = action.payload;
+        }
+      )
+      .addCase(getUserDropdown.rejected, (state, action) => {
+        state.loading = false;
+        state.userSearchingLoader = false;
+        state.userSearchingMessage = "";
         state.error = action.payload as string;
       })
       .addCase(createBrokerUser.pending, (state) => {

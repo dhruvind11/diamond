@@ -22,6 +22,7 @@ import PaymentModel from "./PaymentModel";
 import DeletePopupMessage from "../../components/DeletePopupMessage";
 import { FaSpinner } from "react-icons/fa";
 import ClosePaymentPopupMessage from "../../components/ClosePaymentPopupMessage";
+import { formatDate } from "../../utils/dateFormatter";
 
 const InvoiceListing = () => {
   const navigate = useNavigate();
@@ -44,6 +45,7 @@ const InvoiceListing = () => {
     "Total",
     "Due Amount",
     "Issued Date",
+    "Due Date",
     "Payment Status",
     "Action",
   ];
@@ -75,6 +77,27 @@ const InvoiceListing = () => {
     }
     setConfirmation(false);
     setSelectedUserId("");
+  };
+
+  // helper
+  const getPaymentStatus = (invoiceType: string, paymentStatus: string) => {
+    const isPaid = paymentStatus === "Paid";
+
+    if (invoiceType === "sell") {
+      return {
+        // you are receiving money
+        label: isPaid ? "Received" : "Receivable",
+        color: isPaid ? "success" : "warning",
+        variant: isPaid ? "filled" : "outlined",
+      };
+    }
+
+    // buy invoice (you are paying)
+    return {
+      label: isPaid ? "Paid" : "Unpaid",
+      color: isPaid ? "success" : "error",
+      variant: isPaid ? "filled" : "outlined",
+    };
   };
 
   return (
@@ -119,7 +142,6 @@ const InvoiceListing = () => {
         </Box>
       </Box>
 
-      {/* Table */}
       <Paper
         sx={{
           width: "100%",
@@ -128,7 +150,7 @@ const InvoiceListing = () => {
           boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
         }}
       >
-        <TableContainer sx={{ maxHeight: 500 }}>
+        <TableContainer>
           {loading ? (
             <Box className="h-[550px] flex justify-center items-center">
               <CircularProgress />
@@ -147,6 +169,7 @@ const InvoiceListing = () => {
                   ))}
                 </TableRow>
               </TableHead>
+
               <TableBody>
                 {invoiceData?.length > 0 ? (
                   invoiceData.map((row: any, rowIndex: number) => (
@@ -155,7 +178,12 @@ const InvoiceListing = () => {
                       hover
                       sx={{
                         transition: "all 0.2s",
-                        "&:hover": { backgroundColor: "#f5faff" },
+                        backgroundColor:
+                          row?.invoiceType === "sell" ? "#e0f7fa" : "#fff3e0",
+                        "&:hover": {
+                          backgroundColor:
+                            row?.invoiceType === "sell" ? "#bbdefb" : "#e1bee7",
+                        },
                       }}
                     >
                       <TableCell>{row?.invoiceNo}</TableCell>
@@ -173,7 +201,12 @@ const InvoiceListing = () => {
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={row?.invoiceType}
+                          label={
+                            row?.invoiceType
+                              ? row.invoiceType.charAt(0).toUpperCase() +
+                                row.invoiceType.slice(1).toLowerCase()
+                              : ""
+                          }
                           color={
                             row?.invoiceType === "sell" ? "success" : "info"
                           }
@@ -187,22 +220,24 @@ const InvoiceListing = () => {
                       </TableCell>
                       <TableCell>₹{row?.totalAmount}</TableCell>
                       <TableCell>₹{row?.dueAmount}</TableCell>
+                      <TableCell>{formatDate(row?.createdDate)}</TableCell>
+                      <TableCell>{formatDate(row?.dueDate)}</TableCell>
                       <TableCell>
-                        {
-                          new Date(row?.createdDate)
-                            ?.toISOString()
-                            .split("T")[0]
-                        }
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={row?.paymentStatus}
-                          color={
-                            row?.paymentStatus === "Paid" ? "success" : "error"
-                          }
-                          variant="outlined"
-                          size="small"
-                        />
+                        {(() => {
+                          const s = getPaymentStatus(
+                            row?.invoiceType,
+                            row?.paymentStatus
+                          );
+                          return (
+                            <Chip
+                              label={s.label}
+                              color={s.color as any}
+                              variant={s.variant as any}
+                              size="small"
+                              sx={{ textTransform: "capitalize" }}
+                            />
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>
                         <Box className="flex items-center gap-x-2">
@@ -213,21 +248,24 @@ const InvoiceListing = () => {
                             startIcon={<Payment />}
                             onClick={() => handleOpenPayment(row)}
                             disabled={row?.dueAmount === 0}
+                            sx={{ textTransform: "capitalize" }}
                           >
                             Pay
                           </Button>
-                          {row.dueAmount > 0 && (
-                            <Button
-                              variant="contained"
-                              color="success"
-                              onClick={() => {
-                                setSelectedInvoice(row);
-                                setCloseOpen(true);
-                              }}
-                            >
-                              Close Payment
-                            </Button>
-                          )}
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="success"
+                            onClick={() => {
+                              setSelectedInvoice(row);
+                              setCloseOpen(true);
+                            }}
+                            disabled={row?.dueAmount === 0}
+                            sx={{ textTransform: "capitalize" }}
+                          >
+                            Close Invoice
+                          </Button>
+
                           <Button
                             variant="outlined"
                             size="small"
@@ -235,6 +273,7 @@ const InvoiceListing = () => {
                             onClick={() =>
                               navigate(`/preview-invoice/${row?._id}`)
                             }
+                            sx={{ textTransform: "capitalize" }}
                           >
                             View
                           </Button>

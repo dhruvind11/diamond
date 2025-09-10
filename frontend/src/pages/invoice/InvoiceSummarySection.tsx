@@ -1,6 +1,13 @@
-import { Box, Divider, TextField, Typography } from "@mui/material";
+import {
+  Autocomplete,
+  Box,
+  Divider,
+  TextField,
+  Typography,
+} from "@mui/material";
 import SelectComponent from "../../components/SelectComponent";
-import { FaRupeeSign } from "react-icons/fa";
+import { FaRupeeSign, FaSpinner } from "react-icons/fa";
+import { useAppSelector } from "../../store/store";
 
 const InvoiceSummarySection = ({
   broker,
@@ -9,22 +16,53 @@ const InvoiceSummarySection = ({
   tax,
   subTotal,
   handleSummaryChange,
+  handleInputSelectChange,
   getBrokerOption,
+  formData,
+  invoiceType,
   brokeragePercentage,
   errors,
 }: any) => {
   const total = parseFloat(
     (subTotal - discount + (subTotal * tax) / 100).toFixed(2)
   );
+  console.log("formData", formData);
+  const { userDropdown } = useAppSelector((state) => state.user);
+  console.log("userDropdown", userDropdown);
+  const getOption = () => {
+    const option =
+      userDropdown?.length > 0
+        ? userDropdown
+            ?.filter((user: any) =>
+              invoiceType === "sell"
+                ? formData?.buyer?.value !== user?._id
+                : formData?.seller?.value !== user?._id
+            )
+            ?.map((user: any) => {
+              return {
+                label: user?.username,
+                value: user?._id,
+                email: user?.email,
+              };
+            })
+        : [];
+    return option;
+  };
   return (
     <Box className="mt-8">
       <Divider className="!my-6" />
       <Box className="flex flex-col md:flex-row md:justify-between md:items-start gap-8">
         <Box className="flex-1">
           <Box className="flex items-center mb-3">
+            {/* <Box className="flex items-center gap-x-1.5 text-[#A54EB0]">
+              {userSearchingLoader && <FaSpinner className="animate-spin" />}
+              <Box className="text-sm font-semibold">
+                {userSearchingMessage}
+              </Box>
+            </Box> */}
             <Typography className="!font-semibold !mr-2">Broker:</Typography>
-            <Box className="flex flex-col">
-              <SelectComponent
+            <Box className="w-1/2">
+              {/* <SelectComponent
                 options={getBrokerOption()}
                 name="broker"
                 id="broker"
@@ -32,7 +70,54 @@ const InvoiceSummarySection = ({
                 onChange={(option: any) =>
                   handleSummaryChange("broker", option)
                 }
+              /> */}
+              <Autocomplete
+                className=" "
+                freeSolo
+                options={getOption()}
+                id="broker"
+                value={broker}
+                onChange={(_, option: any) =>
+                  handleSummaryChange("broker", option)
+                }
+                onInputChange={(_, value) => {
+                  handleInputSelectChange(value);
+                }}
+                renderOption={(props, option: any) => {
+                  return (
+                    <li {...props} key={props.id}>
+                      {option.label ? option?.label : option}
+                    </li>
+                  );
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="Please search"
+                    className="!rounded-lg !px-1"
+                    sx={{
+                      "&.MuiTextField-root": {
+                        border: "1px solid #d3d3d3",
+                        "&:focus-within fieldset, &:focus-visible fieldset, & fieldset":
+                          {
+                            border: 0,
+                            padding: 0,
+                          },
+                        "& .MuiInputBase-root": {
+                          padding: 0,
+                        },
+                        "& .MuiOutlinedInput-root": {
+                          "& input": {
+                            color: "black",
+                            paddingLeft: "10px",
+                          },
+                        },
+                      },
+                    }}
+                  />
+                )}
               />
+
               {errors.broker && (
                 <span className="text-xs text-red-600">{errors.broker}</span>
               )}
