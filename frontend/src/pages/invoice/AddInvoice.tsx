@@ -10,7 +10,6 @@ import {
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import logoImage from "../../../public/eco-5465482_1280.webp";
 import DatePickerComponent from "../../components/DatePickerComponent";
-import SelectComponent from "../../components/SelectComponent";
 import { useCallback, useEffect, useState } from "react";
 import { getAllCompanyUser, getUserDropdown } from "../../store/user/userSlice";
 import InvoiceItemsSection from "./InvoiceItemsSection";
@@ -22,7 +21,6 @@ import {
 } from "../../store/invoice/invoiceSlice";
 import { useLocation, useNavigate } from "react-router-dom";
 import { debounce } from "lodash";
-import { FaSpinner } from "react-icons/fa";
 
 const AddInvoice = () => {
   const dispatch = useAppDispatch();
@@ -30,10 +28,7 @@ const AddInvoice = () => {
   const navigate = useNavigate();
   const { company, user, loading } = useAppSelector((state) => state.auth);
   const {
-    companyUsers,
     userDropdown,
-    userSearchingLoader,
-    userSearchingMessage,
   } = useAppSelector((state) => state.user);
   const { nextInvoiceNumber } = useAppSelector((state) => state.invoice);
   const invoiceType = location.state?.invoiceType || "sell";
@@ -85,12 +80,11 @@ const AddInvoice = () => {
       0
     );
 
-    const brokerageAmount =
-      (subTotal * (formData?.brokeragePercentage || 0)) / 100;
-
     const totalAmount = parseFloat(
       (subTotal - (formData.discount || 0))?.toFixed(2)
     );
+    const brokerageAmount =
+      (totalAmount * (formData?.brokeragePercentage || 0)) / 100;
 
     setFormData((prev: any) => ({
       ...prev,
@@ -107,8 +101,16 @@ const AddInvoice = () => {
 
   console.log("formData", formData);
   useEffect(() => {
-    if (formData.dueDay && !isNaN(formData.dueDay) && formData.dueDay >= 0) {
-      const calculatedDueDate = dayjs().add(parseInt(formData.dueDay), "day");
+    const base = formData?.createdDate ? dayjs(formData.createdDate) : dayjs();
+
+    const hasDueDay =
+      formData?.dueDay !== undefined &&
+      formData?.dueDay !== "" &&
+      !isNaN(Number(formData?.dueDay)) &&
+      Number(formData?.dueDay) >= 0;
+
+    if (hasDueDay) {
+      const calculatedDueDate = base.add(Number(formData.dueDay), "day");
       setFormData((prev: any) => ({
         ...prev,
         dueDate: calculatedDueDate,
@@ -117,7 +119,7 @@ const AddInvoice = () => {
     } else {
       setFormData((prev: any) => ({ ...prev, dueDate: null }));
     }
-  }, [formData?.dueDay]);
+  }, [formData?.dueDay, formData?.createdDate]);
 
   const handleDateChange = (date: any, name: string) => {
     setFormData((prev: any) => ({

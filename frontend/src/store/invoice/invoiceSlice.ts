@@ -246,4 +246,3 @@ export const {} = invoiceSlice.actions;
 // export const selectinvoice = (state: RootState) => state.invoice;
 
 export default invoiceSlice.reducer;
-

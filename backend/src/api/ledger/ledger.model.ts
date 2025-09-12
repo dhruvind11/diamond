@@ -10,7 +10,7 @@ const LedgerSchema = new mongoose.Schema(
     amount: { type: Number, required: true },
     type: {
       type: String,
-      enum: ['debit', 'credit', 'credit brokerage', 'discount'],
+      enum: ['debit', 'credit', 'credit brokerage', 'discount', 'debit brokerage'],
       required: true,
     },
     pendingAmount: { type: Number, default: 0 },

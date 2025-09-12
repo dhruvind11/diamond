@@ -40,6 +40,12 @@ class UserController implements ControllerI {
       this.createPartyUser
     );
     this.router.get(
+      `${this.path}/user-dropdown`,
+      authMiddleware,
+      // this.validation.createAdminUserValidation(),
+      this.getCompanyUsersDropdown
+    );
+    this.router.get(
       `${this.path}/:companyId`,
       authMiddleware,
       // this.validation.createAdminUserValidation(),
@@ -322,6 +328,71 @@ class UserController implements ControllerI {
     } catch (error) {
       console.log('There was an issue into update company user: ', error);
       response.statusCode = HTTP_STATUS_CODES.BAD_REQUEST;
+      return next(error);
+    }
+  };
+
+  private getCompanyUsersDropdown = async (
+    request: Request,
+    response: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const { companyId, search } = request.query;
+
+      if (!companyId) {
+        throw new Error(ERROR_MESSAGES.COMMON.REQUIRED.replace(':attribute', 'companyId'));
+      }
+
+      // If search is empty string or only spaces → return empty array
+      if (!search || (typeof search === 'string' && search.trim() === '')) {
+        return successResposne(
+          {
+            message: SUCCESS_MESSAGES.COMMON.ACTION_SUCCESS.replace(
+              ':action',
+              'User dropdown fetched successfully'
+            ),
+            status: SUCCESS_MESSAGES.SUCCESS,
+            statusCode: HTTP_STATUS_CODES.OK,
+            data: [],
+          },
+          request,
+          response,
+          next
+        );
+      }
+
+      const query: any = {
+        companyId,
+        role: { $ne: 'Company' },
+        $or: [
+          { username: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } },
+        ],
+      };
+
+      const users = await MongoService.find(UserModel, {
+        query,
+        select: 'username email role',
+      });
+
+      return successResposne(
+        {
+          message: SUCCESS_MESSAGES.COMMON.ACTION_SUCCESS.replace(
+            ':action',
+            'User dropdown fetched successfully'
+          ),
+          status: SUCCESS_MESSAGES.SUCCESS,
+          statusCode: HTTP_STATUS_CODES.OK,
+          data: users,
+        },
+        request,
+        response,
+        next
+      );
+    } catch (error) {
+      LoggerService.error(`There was an issue fetching the user dropdown: ${error}`);
+      response.status(HTTP_STATUS_CODES.BAD_REQUEST);
       return next(error);
     }
   };

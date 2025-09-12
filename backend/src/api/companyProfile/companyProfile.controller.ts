@@ -24,8 +24,8 @@ class CompanyProfileController implements ControllerI {
   private initializeRoutes() {
     this.router.post(
       `${this.path}`,
-      authMiddleware,
-      roleAccessMiddleware(['Admin']),
+      // authMiddleware,
+      // roleAccessMiddleware(['Admin']),
       upload.single('logoImage'),
       this.validation.createCompanyValidation(),
       this.createCompanyProfile

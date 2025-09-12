@@ -7,11 +7,9 @@ import {
   DialogTitle,
   InputLabel,
   TextField,
-  FormHelperText,
 } from "@mui/material";
 import { userInputField } from "../../../utils/enum/user";
 import { useState } from "react";
-import axios from "axios";
 import { useAppDispatch, useAppSelector } from "../../../store/store";
 import {
   createBrokerUser,
@@ -25,7 +23,6 @@ const AddCompanyUserForm = ({ openModal, setOpenModal, modalType }: any) => {
   const { user } = useAppSelector((state: any) => state.auth);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  //   const [loading, setLoading] = useState(false);
   const dispatch = useAppDispatch();
   const handleClose = () => {
     setOpenModal(false);

@@ -5,8 +5,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import SelectComponent from "../../components/SelectComponent";
-import { FaRupeeSign, FaSpinner } from "react-icons/fa";
+import { FaRupeeSign, } from "react-icons/fa";
 import { useAppSelector } from "../../store/store";
 
 const InvoiceSummarySection = ({
@@ -17,7 +16,6 @@ const InvoiceSummarySection = ({
   subTotal,
   handleSummaryChange,
   handleInputSelectChange,
-  getBrokerOption,
   formData,
   invoiceType,
   brokeragePercentage,

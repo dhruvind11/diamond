@@ -4,13 +4,14 @@ import Login from "../pages/auth/Login";
 import UnauthorizedRoute from "./UnauthorizedRoute";
 import ProtectedRoute from "./ProtectedRoute";
 import Dashboard from "../pages/company/Dashboard";
-import UserListing from "../pages/users/userListing";
 import VerticalNavbar from "../components/VerticalNavbar";
 import AddInvoice from "../pages/invoice/AddInvoice";
 import InvoiceListing from "../pages/invoice/InvoiceListing";
 import LedgerListing from "../pages/ledger/LedgerListing";
 import InvoicePreview from "../pages/invoice/InvoicePreview";
 import PartyLedgerDetail from "../pages/ledger/PartyLedgerDetail";
+import Report from "../pages/report/Report";
+import UserListing from "../pages/users/UserListing";
 
 const AppRoutes = () => {
   return (
@@ -95,6 +96,17 @@ const AppRoutes = () => {
               <ProtectedRoute>
                 <VerticalNavbar>
                   <PartyLedgerDetail />
+                </VerticalNavbar>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/report"
+            element={
+              <ProtectedRoute>
+                <VerticalNavbar>
+                  <Report />
                 </VerticalNavbar>
               </ProtectedRoute>
             }

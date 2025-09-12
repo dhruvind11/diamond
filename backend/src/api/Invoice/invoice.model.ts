@@ -81,10 +81,7 @@ const InvoiceSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    // tax: {
-    //   type: Number,
-    //   required: true,
-    // },
+
     paymentStatus: {
       type: String,
       enum: ['Paid', 'Unpaid'],

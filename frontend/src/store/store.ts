@@ -6,6 +6,8 @@ import userReducer from "./user/userSlice";
 import invoiceReducer from "./invoice/invoiceSlice";
 import ledgerReducer from "./ledger/ledgerSlice";
 import dashboardReducer from "./dashboard/dashboardSlice";
+import reportReducer from "./report/reportSlice";
+
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -13,6 +15,7 @@ export const store = configureStore({
     invoice: invoiceReducer,
     ledger: ledgerReducer,
     dashboard: dashboardReducer,
+    report: reportReducer,
   },
 });
 

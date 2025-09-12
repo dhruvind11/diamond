@@ -9,7 +9,6 @@ import {
   Typography,
 } from "@mui/material";
 import { closePayment, getInvoiceById } from "../store/invoice/invoiceSlice";
-import { useDispatch } from "react-redux";
 import { FaRupeeSign } from "react-icons/fa";
 import DatePickerComponent from "./DatePickerComponent";
 import { useEffect, useState } from "react";
@@ -197,4 +196,3 @@ const ClosePaymentPopupMessage = ({
 };
 
 export default ClosePaymentPopupMessage;
-

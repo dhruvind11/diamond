@@ -137,7 +137,7 @@ const InvoiceListing = () => {
               navigate("/add-invoice", { state: { invoiceType: "buy" } })
             }
           >
-            Buy Invoice
+            Purchase Invoice
           </Button>
         </Box>
       </Box>
@@ -179,11 +179,11 @@ const InvoiceListing = () => {
                       sx={{
                         transition: "all 0.2s",
                         backgroundColor:
-                          row?.invoiceType === "sell" ? "#e0f7fa" : "#fff3e0",
-                        "&:hover": {
-                          backgroundColor:
-                            row?.invoiceType === "sell" ? "#bbdefb" : "#e1bee7",
-                        },
+                          row?.invoiceType === "sell" ? "#e8f5e9" : "#e3f2fd",
+                        // "&:hover": {
+                        //   backgroundColor:
+                        //     row?.invoiceType === "sell" ? "#bbdefb" : "#e1bee7",
+                        // },
                       }}
                     >
                       <TableCell>{row?.invoiceNo}</TableCell>
@@ -203,8 +203,10 @@ const InvoiceListing = () => {
                         <Chip
                           label={
                             row?.invoiceType
-                              ? row.invoiceType.charAt(0).toUpperCase() +
-                                row.invoiceType.slice(1).toLowerCase()
+                              ? row.invoiceType === "buy"
+                                ? "Purchase"
+                                : row.invoiceType.charAt(0).toUpperCase() +
+                                  row.invoiceType.slice(1).toLowerCase()
                               : ""
                           }
                           color={

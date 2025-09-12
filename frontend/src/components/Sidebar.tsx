@@ -1,14 +1,5 @@
-import React, { useState } from "react";
-import {
-  Box,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Typography,
-} from "@mui/material";
+import { useState } from "react";
+import { Box, List, Typography } from "@mui/material";
 import { Link, useLocation } from "react-router-dom";
 import { FaRainbow } from "react-icons/fa6";
 import { LuUsers } from "react-icons/lu";
@@ -17,8 +8,6 @@ import { LiaFileInvoiceSolid } from "react-icons/lia";
 import logoImage from "../../public/eco-5465482_1280.webp";
 import { FiLogOut } from "react-icons/fi";
 import LogoutConfirmationPopup from "./LogoutConfirmationPopup";
-
-const drawerWidth = 240;
 
 const Sidebar = () => {
   const location = useLocation();
@@ -37,6 +26,11 @@ const Sidebar = () => {
       name: "Ledger",
       icon: LiaFileInvoiceSolid,
       param: "/ledger",
+    },
+    {
+      name: "Report",
+      icon: LiaFileInvoiceSolid,
+      param: "/report",
     },
   ];
   return (

@@ -4,7 +4,6 @@ import {
   type PayloadAction,
 } from "@reduxjs/toolkit";
 import { fetchCompanyLedgerAPI, fetchPartyLedgerAPI } from "./ledgerAPI";
-import AxiosRequest from "../../AxiosRequest";
 // import { RootState } from "../store";
 
 export const getCompanyLedger = createAsyncThunk(

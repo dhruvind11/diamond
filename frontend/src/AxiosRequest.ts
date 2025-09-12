@@ -19,9 +19,9 @@ AxiosRequest.interceptors.response.use(
   },
   async (error) => {
     // get url
-    const url = window.location.pathname;
-    const parts = url.split("/");
-    const id = parts[parts.length - 1];
+    // const url = window.location.pathname;
+    // const parts = url.split("/");
+    // const id = parts[parts.length - 1];
     console.log("error ---------------------", error);
     if (axios.isCancel(error)) {
       return Promise.reject(error);
@@ -63,4 +63,5 @@ AxiosRequest.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
 export default AxiosRequest;
